@@ -27,10 +27,10 @@
 
 namespace devilution {
 
-constexpr uint32_t GameIdDiabloFull = LoadBE32("DRTL");
-constexpr uint32_t GameIdDiabloSpawn = LoadBE32("DSHR");
-constexpr uint32_t GameIdHellfireFull = LoadBE32("HRTL");
-constexpr uint32_t GameIdHellfireSpawn = LoadBE32("HSHR");
+constexpr uint32_t GameIdDiabloFull = LoadBE32("DRHX");
+constexpr uint32_t GameIdDiabloSpawn = LoadBE32("DSHX");
+constexpr uint32_t GameIdHellfireFull = LoadBE32("HRHX");
+constexpr uint32_t GameIdHellfireSpawn = LoadBE32("HSHX");
 #define GAME_ID (gbIsHellfire ? (gbIsSpawn ? GameIdHellfireSpawn : GameIdHellfireFull) : (gbIsSpawn ? GameIdDiabloSpawn : GameIdDiabloFull))
 
 #define NUMLEVELS 25
