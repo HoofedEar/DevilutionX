@@ -688,9 +688,10 @@ void StartWitch()
 	AddSText(0, 14, _("Buy items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 	AddSText(0, 16, _("Sell items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 	AddSText(0, 18, _("Recharge staves"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-	AddSText(0, 20, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 20, _("Transcribe scrolls"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 22, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 	AddSLine(5);
-	CurrentItemIndex = 20;
+	CurrentItemIndex = 22;
 }
 
 void ScrollWitchBuy(int idx)
@@ -906,6 +907,91 @@ void StartWitchRecharge()
 	AddItemListBackButton();
 }
 
+void ScrollWitchTranscribeScrolls(int idx)
+{
+	ScrollVendorStore(PlayerItems, CurrentItemIndex, idx, false);
+}
+
+void StartWitchTranscribeScrolls()
+{
+	IsTextFullSize = true;
+	bool hasScrollsToTranscribe = false;
+	CurrentItemIndex = 0;
+
+	for (auto &item : PlayerItems) {
+		item.clear();
+	}
+
+	const Player &myPlayer = *MyPlayer;
+
+	// Count scrolls by spell
+	int scrollCounts[static_cast<int>(SpellID::LAST) + 1] = {};
+	Item *firstScrollOfSpell[static_cast<int>(SpellID::LAST) + 1] = {};
+
+	// Scan inventory for scrolls
+	for (int i = 0; i < myPlayer._pNumInv; i++) {
+		const Item &item = myPlayer.InvList[i];
+		if (item.isScroll()) {
+			int spellIdx = static_cast<int>(item._iSpell);
+			if (spellIdx >= 0 && spellIdx <= static_cast<int>(SpellID::LAST)) {
+				scrollCounts[spellIdx]++;
+				if (firstScrollOfSpell[spellIdx] == nullptr) {
+					firstScrollOfSpell[spellIdx] = const_cast<Item *>(&item);
+				}
+			}
+		}
+	}
+
+	// Scan belt for scrolls
+	for (int i = 0; i < MaxBeltItems; i++) {
+		const Item &item = myPlayer.SpdList[i];
+		if (!item.isEmpty() && item.isScroll()) {
+			int spellIdx = static_cast<int>(item._iSpell);
+			if (spellIdx >= 0 && spellIdx <= static_cast<int>(SpellID::LAST)) {
+				scrollCounts[spellIdx]++;
+				if (firstScrollOfSpell[spellIdx] == nullptr) {
+					firstScrollOfSpell[spellIdx] = const_cast<Item *>(&myPlayer.SpdList[i]);
+				}
+			}
+		}
+	}
+
+	// Create entries for spells with 3+ scrolls
+	for (int spellIdx = 0; spellIdx <= static_cast<int>(SpellID::LAST); spellIdx++) {
+		if (scrollCounts[spellIdx] >= 3 && firstScrollOfSpell[spellIdx] != nullptr) {
+			if (CurrentItemIndex >= 48)
+				break;
+
+			hasScrollsToTranscribe = true;
+			PlayerItems[CurrentItemIndex] = *firstScrollOfSpell[spellIdx];
+			PlayerItems[CurrentItemIndex]._iIvalue = 200; // Transcription cost
+			PlayerItemIndexes[CurrentItemIndex] = scrollCounts[spellIdx]; // Store count in the index
+			CurrentItemIndex++;
+		}
+	}
+
+	if (!hasScrollsToTranscribe) {
+		HasScrollbar = false;
+
+		RenderGold = true;
+		AddSText(20, 1, _("You don't have enough scrolls."), UiFlags::ColorWhitegold, false);
+		AddSText(20, 3, _("Bring me at least 3 scrolls of the same spell."), UiFlags::ColorWhitegold, false);
+		AddSLine(5);
+		AddItemListBackButton(/*selectable=*/true);
+		return;
+	}
+
+	HasScrollbar = true;
+	ScrollPos = 0;
+	NumTextLines = CurrentItemIndex;
+
+	RenderGold = true;
+	AddSText(20, 1, _("Which scrolls do you want transcribed?"), UiFlags::ColorWhitegold, false);
+	AddSLine(3);
+	ScrollWitchTranscribeScrolls(ScrollPos);
+	AddItemListBackButton();
+}
+
 void StoreNoMoney()
 {
 	StartStore(OldActiveStore);
@@ -952,6 +1038,9 @@ void StoreConfirm(Item &item)
 		break;
 	case TalkID::WitchRecharge:
 		prompt = _("Are you sure you want to recharge this item?");
+		break;
+	case TalkID::WitchTranscribeScrolls:
+		prompt = _("Transcribe 3 scrolls into a book?");
 		break;
 	case TalkID::SmithSell:
 	case TalkID::WitchSell:
@@ -1555,6 +1644,9 @@ void WitchEnter()
 		StartStore(TalkID::WitchRecharge);
 		break;
 	case 20:
+		StartStore(TalkID::WitchTranscribeScrolls);
+		break;
+	case 22:
 		ActiveStore = TalkID::None;
 		break;
 	}
@@ -1670,6 +1762,79 @@ void WitchRechargeEnter()
 	}
 
 	OldActiveStore = TalkID::WitchRecharge;
+	OldTextLine = CurrentTextLine;
+	OldScrollPos = ScrollPos;
+
+	const int idx = ScrollPos + ((CurrentTextLine - PreviousScrollPos) / 4);
+
+	if (!PlayerCanAfford(PlayerItems[idx]._iIvalue)) {
+		StartStore(TalkID::NoMoney);
+		return;
+	}
+
+	TempItem = PlayerItems[idx];
+	StartStore(TalkID::Confirm);
+}
+
+/**
+ * @brief Transcribes 3 scrolls into a book for the selected spell.
+ */
+void WitchTranscribeScrolls(int price)
+{
+	const int idx = OldScrollPos + ((OldTextLine - PreviousScrollPos) / 4);
+	const SpellID spellId = PlayerItems[idx]._iSpell;
+
+	Player &myPlayer = *MyPlayer;
+	int scrollsRemoved = 0;
+	const int scrollsNeeded = 3;
+
+	// Remove 3 scrolls from inventory
+	for (int i = myPlayer._pNumInv - 1; i >= 0 && scrollsRemoved < scrollsNeeded; i--) {
+		if (myPlayer.InvList[i].isScroll() && myPlayer.InvList[i]._iSpell == spellId) {
+			myPlayer.RemoveInvItem(i, false);
+			scrollsRemoved++;
+		}
+	}
+
+	// Remove scrolls from belt if needed
+	for (int i = MaxBeltItems - 1; i >= 0 && scrollsRemoved < scrollsNeeded; i--) {
+		if (!myPlayer.SpdList[i].isEmpty() && myPlayer.SpdList[i].isScroll() && myPlayer.SpdList[i]._iSpell == spellId) {
+			myPlayer.RemoveSpdBarItem(i);
+			scrollsRemoved++;
+		}
+	}
+
+	// Create the book
+	Item bookItem;
+	CreateTypeItem(myPlayer.position.tile, false, ItemType::Misc, IMISC_BOOK, false, false);
+	// Find the book we just created and configure it
+	for (int i = 0; i < ActiveItemCount; i++) {
+		Item &item = Items[ActiveItems[i]];
+		if (item._iMiscId == IMISC_BOOK && item._iSpell == spellId) {
+			bookItem = item;
+			item._iDelFlag = true; // Mark for deletion from ground
+			break;
+		}
+	}
+
+	// Give book to player
+	if (!bookItem.isEmpty()) {
+		StoreAutoPlace(bookItem, true);
+	}
+
+	TakePlrsMoney(price);
+	CalcPlrInv(myPlayer, true);
+}
+
+void WitchTranscribeScrollsEnter()
+{
+	if (CurrentTextLine == BackButtonLine()) {
+		StartStore(TalkID::Witch);
+		CurrentTextLine = 20;
+		return;
+	}
+
+	OldActiveStore = TalkID::WitchTranscribeScrolls;
 	OldTextLine = CurrentTextLine;
 	OldScrollPos = ScrollPos;
 
@@ -1836,6 +2001,9 @@ void ConfirmEnter(Item &item)
 			break;
 		case TalkID::WitchRecharge:
 			WitchRechargeItem(item._iIvalue);
+			break;
+		case TalkID::WitchTranscribeScrolls:
+			WitchTranscribeScrolls(item._iIvalue);
 			break;
 		case TalkID::BoyBuy:
 			BoyBuyItem(BoyItem, item._iIvalue);
@@ -2305,6 +2473,9 @@ void StartStore(TalkID s)
 	case TalkID::WitchRecharge:
 		StartWitchRecharge();
 		break;
+	case TalkID::WitchTranscribeScrolls:
+		StartWitchTranscribeScrolls();
+		break;
 	case TalkID::NoMoney:
 		StoreNoMoney();
 		break;
@@ -2647,6 +2818,9 @@ void StoreEnter()
 		break;
 	case TalkID::WitchRecharge:
 		WitchRechargeEnter();
+		break;
+	case TalkID::WitchTranscribeScrolls:
+		WitchTranscribeScrollsEnter();
 		break;
 	case TalkID::NoMoney:
 	case TalkID::NoRoom:
