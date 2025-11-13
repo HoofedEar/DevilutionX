@@ -140,6 +140,37 @@ const char *const TownerNames[] = {
 	N_("Wirt"),
 };
 
+// Mapping for scroll spell -> price
+static const std::unordered_map<SpellID, int> ScrollPricesBySpell = {
+	{ SpellID::Firebolt, 1000 },
+	{ SpellID::Healing, 1000 },
+	{ SpellID::Lightning, 3000 },
+	{ SpellID::Flash, 7500 },
+	{ SpellID::FireWall, 6000 },
+	{ SpellID::TownPortal, 3000 },
+	{ SpellID::StoneCurse, 12000 },
+	{ SpellID::Phasing, 3500 },
+	{ SpellID::ManaShield, 16000 },
+	{ SpellID::Fireball, 8000 },
+	{ SpellID::Guardian, 14000 },
+	{ SpellID::ChainLightning, 11000 },
+	{ SpellID::FlameWave, 1000 },
+	{ SpellID::Nova, 21000 },
+	{ SpellID::Inferno, 2000 },
+	{ SpellID::Golem, 18000 },
+	{ SpellID::Teleport, 20000 },
+	{ SpellID::Apocalypse, 300000 },
+	{ SpellID::Etherealize, 26000 },
+	{ SpellID::Elemental, 10500},
+	{ SpellID::ChargedBolt, 1000 },
+	{ SpellID::HolyBolt, 1000 },
+	{ SpellID::Resurrect, 4000 },
+	{ SpellID::Telekinesis, 2500 },
+	{ SpellID::HealOther, 1000 },
+	{ SpellID::BloodStar, 27500 },
+	{ SpellID::BoneSpirit, 11500 },
+};
+
 constexpr int PaddingTop = 32;
 
 // For most languages, line height is always 12.
@@ -387,7 +418,7 @@ void ScrollVendorStoreCustomPrice(Item *itemData, int storeLimit, int idx)
 		if (!item.isEmpty()) {
 			const UiFlags itemColor = item.getTextColorWithStatCheck();
 			AddSText(20, l, item.getName(), itemColor, true, item._iCurs, true);
-			AddSTextVal(l, item._iIvalue); // Use custom price
+			AddSTextVal(l, ScrollPricesBySpell.at(item._iSpell)); // Use custom price
 			PrintStoreItem(item, l + 1, itemColor, true);
 			NextScrollPos = l;
 		} else {
@@ -979,8 +1010,8 @@ void StartWitchTranscribeScrolls()
 
 			hasScrollsToTranscribe = true;
 			PlayerItems[CurrentItemIndex] = *firstScrollOfSpell[spellIdx];
-			// Transcription cost is half the book's selling price
-			PlayerItems[CurrentItemIndex]._iIvalue = GetSpellData(spell).bookCost() / 2;
+			PlayerItems[CurrentItemIndex]._ivalue = std::max(PlayerItems[CurrentItemIndex]._ivalue / 4, 1);
+			PlayerItems[CurrentItemIndex]._iIvalue = PlayerItems[CurrentItemIndex]._ivalue;
 			PlayerItemIndexes[CurrentItemIndex] = scrollCounts[spellIdx]; // Store count in the index
 			CurrentItemIndex++;
 		}
@@ -1034,7 +1065,11 @@ void StoreConfirm(Item &item)
 
 	const UiFlags itemColor = item.getTextColorWithStatCheck();
 	AddSText(20, 8, item.getName(), itemColor, false);
-	AddSTextVal(8, item._iIvalue);
+	if (OldActiveStore == TalkID::WitchTranscribeScrolls) {
+		AddSTextVal(8, ScrollPricesBySpell.at(item._iSpell));
+	} else {
+		AddSTextVal(8, item._iIvalue);
+	}
 	PrintStoreItem(item, 9, itemColor);
 
 	std::string_view prompt;
@@ -1813,7 +1848,7 @@ void WitchTranscribeScrolls(int price)
 		// Set book properties
 		const SpellData &spellData = GetSpellData(spellId);
 		bookItem._iMinMag = spellData.minInt;
-		bookItem._ivalue = bookItem._iIvalue = spellData.bookCost() * 10;
+		bookItem._ivalue = bookItem._iIvalue = spellData.bookCost();
 
 		// Set book cursor color based on spell type
 		switch (spellData.type()) {
@@ -2010,7 +2045,7 @@ void ConfirmEnter(Item &item)
 			WitchRechargeItem(item._iIvalue);
 			break;
 		case TalkID::WitchTranscribeScrolls:
-			WitchTranscribeScrolls(item._iIvalue);
+			WitchTranscribeScrolls(ScrollPricesBySpell.at(item._iSpell));
 			break;
 		case TalkID::BoyBuy:
 			BoyBuyItem(BoyItem, item._iIvalue);
