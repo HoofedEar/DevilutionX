@@ -45,6 +45,7 @@ enum class TalkID : uint8_t {
 	WitchBuy,
 	WitchSell,
 	WitchRecharge,
+	WitchTranscribeScrolls,
 	NoMoney,
 	NoRoom,
 	Confirm,
