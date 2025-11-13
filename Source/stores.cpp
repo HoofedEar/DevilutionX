@@ -1010,9 +1010,38 @@ void StartWitchTranscribeScrolls()
 				break;
 
 			hasScrollsToTranscribe = true;
-			PlayerItems[CurrentItemIndex] = *firstScrollOfSpell[spellIdx];
-			PlayerItems[CurrentItemIndex]._ivalue = std::max(PlayerItems[CurrentItemIndex]._ivalue / 4, 1);
-			PlayerItems[CurrentItemIndex]._iIvalue = PlayerItems[CurrentItemIndex]._ivalue;
+			// Create a book item for display (showing what the player will receive)
+			Item bookItem = *firstScrollOfSpell[spellIdx];
+
+			// Convert scroll to book for display
+			bookItem._iMiscId = IMISC_BOOK;
+			bookItem._itype = ItemType::Misc;
+
+			// Update name to "Book of X" instead of "Scroll of X"
+			const std::string_view spellName = GetSpellData(spell).sNameText;
+			CopyUtf8(bookItem._iName, _("Book of "), ItemNameLength);
+			CopyUtf8(bookItem._iName + std::string_view(bookItem._iName).size(), spellName, ItemNameLength - std::string_view(bookItem._iName).size());
+			CopyUtf8(bookItem._iIName, bookItem._iName, ItemNameLength);
+
+			// Set book properties
+			const SpellData &spellData = GetSpellData(spell);
+			bookItem._iMinMag = spellData.minInt;
+			bookItem._ivalue = bookItem._iIvalue = spellData.bookCost();
+
+			// Set book cursor color based on spell type
+			switch (spellData.type()) {
+			case MagicType::Fire:
+				bookItem._iCurs = ICURS_BOOK_RED;
+				break;
+			case MagicType::Lightning:
+				bookItem._iCurs = ICURS_BOOK_BLUE;
+				break;
+			case MagicType::Magic:
+				bookItem._iCurs = ICURS_BOOK_GREY;
+				break;
+			}
+
+			PlayerItems[CurrentItemIndex] = bookItem;
 			PlayerItemIndexes[CurrentItemIndex] = scrollCounts[spellIdx]; // Store count in the index
 			CurrentItemIndex++;
 		}
