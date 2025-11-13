@@ -73,7 +73,7 @@ if(NOT VERSION_SUFFIX)
   endif()
 endif()
 
-project(DevilutionX
+project(DiabloHX
   VERSION ${VERSION_NUM}
   LANGUAGES C CXX)
 set(PROJECT_VERSION_WITH_SUFFIX "${VERSION_PREFIX}${VERSION_SUFFIX}")
