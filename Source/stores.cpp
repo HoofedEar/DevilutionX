@@ -26,6 +26,7 @@
 #include "options.h"
 #include "panels/info_box.hpp"
 #include "qol/stash.h"
+#include "spells.h"
 #include "townerdat.hpp"
 #include "towners.h"
 #include "utils/format_int.hpp"
@@ -377,6 +378,27 @@ void ScrollVendorStore(std::span<Item> itemData, int storeLimit, int idx, int se
 	}
 }
 
+void ScrollVendorStoreCustomPrice(Item *itemData, int storeLimit, int idx)
+{
+	ClearSText(5, 21);
+	PreviousScrollPos = 5;
+
+	for (int l = 5; l < 20 && idx < storeLimit; l += 4) {
+		const Item &item = itemData[idx];
+		if (!item.isEmpty()) {
+			const UiFlags itemColor = item.getTextColorWithStatCheck();
+			AddSText(20, l, item.getName(), itemColor, true, item._iCurs, true);
+			AddSTextVal(l, item._iIvalue); // Use custom price
+			PrintStoreItem(item, l + 1, itemColor, true);
+			NextScrollPos = l;
+		} else {
+			l -= 4;
+		}
+		idx++;
+	}
+	NumTextLines = std::max(static_cast<int>(storeLimit) - 4, 0);
+}
+
 void StartSmith()
 {
 	IsTextFullSize = false;
@@ -674,15 +696,15 @@ void StartWitch()
 	IsTextFullSize = false;
 	HasScrollbar = false;
 	AddSText(0, 2, _("Witch's shack"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
-	AddSText(0, 9, _("Would you like to:"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
-	AddSText(0, 12, _("Talk to Adria"), UiFlags::ColorBlue | UiFlags::AlignCenter, true);
-	AddSText(0, 14, _("Buy items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-	AddSText(0, 16, _("Sell items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-	AddSText(0, 18, _("Recharge staves"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-	AddSText(0, 20, _("Transcribe scrolls"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-	AddSText(0, 22, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 7, _("Would you like to:"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
+	AddSText(0, 10, _("Talk to Adria"), UiFlags::ColorBlue | UiFlags::AlignCenter, true);
+	AddSText(0, 12, _("Buy items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 14, _("Sell items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 16, _("Recharge staves"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 18, _("Transcribe scrolls"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	AddSText(0, 20, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 	AddSLine(5);
-	CurrentItemIndex = 22;
+	CurrentItemIndex = 20;
 }
 
 void ScrollWitchBuy(int idx)
@@ -897,7 +919,7 @@ void StartWitchRecharge()
 
 void ScrollWitchTranscribeScrolls(int idx)
 {
-	ScrollVendorStore(PlayerItems, CurrentItemIndex, idx, false);
+	ScrollVendorStoreCustomPrice(PlayerItems, CurrentItemIndex, idx);
 }
 
 void StartWitchTranscribeScrolls()
@@ -944,15 +966,22 @@ void StartWitchTranscribeScrolls()
 		}
 	}
 
-	// Create entries for spells with 3+ scrolls
+	// Create entries for spells with 3+ scrolls that have book versions
 	for (int spellIdx = 0; spellIdx <= static_cast<int>(SpellID::LAST); spellIdx++) {
 		if (scrollCounts[spellIdx] >= 3 && firstScrollOfSpell[spellIdx] != nullptr) {
+			// Check if this spell has a book version
+			const SpellID spell = static_cast<SpellID>(spellIdx);
+			if (GetSpellBookLevel(spell) == -1) {
+				continue; // This spell has no book version, skip it
+			}
+
 			if (CurrentItemIndex >= 48)
 				break;
 
 			hasScrollsToTranscribe = true;
 			PlayerItems[CurrentItemIndex] = *firstScrollOfSpell[spellIdx];
-			PlayerItems[CurrentItemIndex]._iIvalue = 200; // Transcription cost
+			// Transcription cost is half the book's selling price
+			PlayerItems[CurrentItemIndex]._iIvalue = GetSpellData(spell).bookCost() / 2;
 			PlayerItemIndexes[CurrentItemIndex] = scrollCounts[spellIdx]; // Store count in the index
 			CurrentItemIndex++;
 		}
@@ -1589,25 +1618,25 @@ void SmithRepairEnter()
 void WitchEnter()
 {
 	switch (CurrentTextLine) {
-	case 12:
-		OldTextLine = 12;
+	case 10:
+		OldTextLine = 10;
 		TownerId = TOWN_WITCH;
 		OldActiveStore = TalkID::Witch;
 		StartStore(TalkID::Gossip);
 		break;
-	case 14:
+	case 12:
 		StartStore(TalkID::WitchBuy);
 		break;
-	case 16:
+	case 14:
 		StartStore(TalkID::WitchSell);
 		break;
-	case 18:
+	case 16:
 		StartStore(TalkID::WitchRecharge);
 		break;
-	case 20:
+	case 18:
 		StartStore(TalkID::WitchTranscribeScrolls);
 		break;
-	case 22:
+	case 20:
 		ActiveStore = TalkID::None;
 		break;
 	}
@@ -1637,7 +1666,7 @@ void WitchBuyEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 14;
+		CurrentTextLine = 12;
 		return;
 	}
 
@@ -1665,7 +1694,7 @@ void WitchSellEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 16;
+		CurrentTextLine = 14;
 		return;
 	}
 
@@ -1711,7 +1740,7 @@ void WitchRechargeEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 18;
+		CurrentTextLine = 16;
 		return;
 	}
 
@@ -1741,10 +1770,16 @@ void WitchTranscribeScrolls(int price)
 	Player &myPlayer = *MyPlayer;
 	int scrollsRemoved = 0;
 	const int scrollsNeeded = 3;
+	Item templateScroll;
+	bool foundTemplate = false;
 
-	// Remove 3 scrolls from inventory
+	// Remove 3 scrolls from inventory and save first as template
 	for (int i = myPlayer._pNumInv - 1; i >= 0 && scrollsRemoved < scrollsNeeded; i--) {
 		if (myPlayer.InvList[i].isScroll() && myPlayer.InvList[i]._iSpell == spellId) {
+			if (!foundTemplate) {
+				templateScroll = myPlayer.InvList[i];
+				foundTemplate = true;
+			}
 			myPlayer.RemoveInvItem(i, false);
 			scrollsRemoved++;
 		}
@@ -1753,27 +1788,53 @@ void WitchTranscribeScrolls(int price)
 	// Remove scrolls from belt if needed
 	for (int i = MaxBeltItems - 1; i >= 0 && scrollsRemoved < scrollsNeeded; i--) {
 		if (!myPlayer.SpdList[i].isEmpty() && myPlayer.SpdList[i].isScroll() && myPlayer.SpdList[i]._iSpell == spellId) {
+			if (!foundTemplate) {
+				templateScroll = myPlayer.SpdList[i];
+				foundTemplate = true;
+			}
 			myPlayer.RemoveSpdBarItem(i);
 			scrollsRemoved++;
 		}
 	}
 
-	// Create the book
-	Item bookItem;
-	CreateTypeItem(myPlayer.position.tile, false, ItemType::Misc, IMISC_BOOK, false, false);
-	// Find the book we just created and configure it
-	for (int i = 0; i < ActiveItemCount; i++) {
-		Item &item = Items[ActiveItems[i]];
-		if (item._iMiscId == IMISC_BOOK && item._iSpell == spellId) {
-			bookItem = item;
-			item._iDelFlag = true; // Mark for deletion from ground
+	// Create book from the scroll template
+	if (foundTemplate) {
+		Item bookItem = templateScroll;
+
+		// Convert scroll to book
+		bookItem._iMiscId = IMISC_BOOK;
+		bookItem._itype = ItemType::Misc;
+
+		// Update name to "Book of X" instead of "Scroll of X"
+		const std::string_view spellName = GetSpellData(spellId).sNameText;
+		CopyUtf8(bookItem._iName, _("Book of "), ItemNameLength);
+		CopyUtf8(bookItem._iName + std::string_view(bookItem._iName).size(), spellName, ItemNameLength - std::string_view(bookItem._iName).size());
+		CopyUtf8(bookItem._iIName, bookItem._iName, ItemNameLength);
+
+		// Set book properties
+		const SpellData &spellData = GetSpellData(spellId);
+		bookItem._iMinMag = spellData.minInt;
+		bookItem._ivalue = bookItem._iIvalue = spellData.bookCost() * 10;
+
+		// Set book cursor color based on spell type
+		switch (spellData.type()) {
+		case MagicType::Fire:
+			bookItem._iCurs = ICURS_BOOK_RED;
+			break;
+		case MagicType::Lightning:
+			bookItem._iCurs = ICURS_BOOK_BLUE;
+			break;
+		case MagicType::Magic:
+			bookItem._iCurs = ICURS_BOOK_GREY;
 			break;
 		}
-	}
 
-	// Give book to player
-	if (!bookItem.isEmpty()) {
-		StoreAutoPlace(bookItem, true);
+		// Try to place in inventory, drop to ground if full
+		if (!StoreAutoPlace(bookItem, true)) {
+			// Inventory is full, drop book at player's feet
+			const Point itemPosition = GetSuperItemLoc(myPlayer.position.tile);
+			PlaceItemInWorld(std::move(bookItem), itemPosition);
+		}
 	}
 
 	TakePlrsMoney(price);
@@ -1784,7 +1845,7 @@ void WitchTranscribeScrollsEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 20;
+		CurrentTextLine = 18;
 		return;
 	}
 
@@ -2575,13 +2636,17 @@ void StoreESC()
 		break;
 	case TalkID::WitchBuy:
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 14;
+		CurrentTextLine = 12;
 		break;
 	case TalkID::WitchSell:
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 16;
+		CurrentTextLine = 14;
 		break;
 	case TalkID::WitchRecharge:
+		StartStore(TalkID::Witch);
+		CurrentTextLine = 16;
+		break;
+	case TalkID::WitchTranscribeScrolls:
 		StartStore(TalkID::Witch);
 		CurrentTextLine = 18;
 		break;
