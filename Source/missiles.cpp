@@ -274,10 +274,8 @@ int ProjectileTrapDamage()
 	return currlevel + GenerateRnd(2 * currlevel);
 }
 
-bool MonsterMHit(const Player &player, int monsterId, int mindam, int maxdam, int dist, MissileID t, WorldTilePosition startPos, DamageType damageType, bool shift)
+bool MonsterMHit(const Player &player, Monster &monster, int mindam, int maxdam, int dist, MissileID t, WorldTilePosition startPos, DamageType damageType, bool shift)
 {
-	Monster &monster = Monsters[monsterId];
-
 	if (!monster.isPossibleToHit() || monster.isImmune(t, damageType))
 		return false;
 
@@ -474,28 +472,37 @@ void RotateBlockedMissile(Missile &missile)
 	missile.setFrameGroupRaw(dir);
 }
 
-void CheckMissileCol(Missile &missile, DamageType damageType, int minDamage, int maxDamage, bool isDamageShifted, Point position, bool dontDeleteOnCollision)
+bool CheckCanHitOnlyWalking(const Missile &missile, const ActorPosition &position, Direction wallDir)
+{
+	Point other = missile.position.tile + wallDir;
+	if (missile.position.tile == position.tile && other == position.future)
+		return true;
+	if (missile.position.tile == position.future && other == position.tile)
+		return true;
+	return false;
+}
+
+void CheckMissileCol(Missile &missile, DamageType damageType, int minDamage, int maxDamage, bool isDamageShifted, Point position, bool dontDeleteOnCollision, std::optional<Direction> onlyHitWalking = {})
 {
 	if (!InDungeonBounds(position))
 		return;
 
-	const int mx = position.x;
-	const int my = position.y;
-
 	bool isMonsterHit = false;
-	int mid = dMonster[mx][my];
-	if (mid > 0 || (mid != 0 && Monsters[std::abs(mid) - 1].mode == MonsterMode::Petrified)) {
-		mid = std::abs(mid) - 1;
-		if (missile.IsTrap()
-		    || (missile._micaster == TARGET_PLAYERS && (                                           // or was fired by a monster and
-		            Monsters[mid].isPlayerMinion() != Monsters[missile._misource].isPlayerMinion() //  the monsters are on opposing factions
-		            || (Monsters[missile._misource].flags & MFLAG_BERSERK) != 0                    //  or the attacker is berserked
-		            || (Monsters[mid].flags & MFLAG_BERSERK) != 0                                  //  or the target is berserked
-		            ))) {
-			// then the missile can potentially hit this target
-			isMonsterHit = MonsterTrapHit(mid, minDamage, maxDamage, missile._midist, missile._mitype, damageType, isDamageShifted);
-		} else if (IsAnyOf(missile._micaster, TARGET_BOTH, TARGET_MONSTERS)) {
-			isMonsterHit = MonsterMHit(*missile.sourcePlayer(), mid, minDamage, maxDamage, missile._midist, missile._mitype, missile.position.start, damageType, isDamageShifted);
+	int mid = dMonster[position.x][position.y];
+	if (mid != 0) {
+		Monster &monster = Monsters[std::abs(mid) - 1];
+		if (onlyHitWalking.has_value() ? (monster.isWalking() && CheckCanHitOnlyWalking(missile, monster.position, *onlyHitWalking)) : (mid > 0 || monster.mode == MonsterMode::Petrified)) {
+			if (missile.IsTrap()
+			    || (missile._micaster == TARGET_PLAYERS && (                                     // or was fired by a monster and
+			            monster.isPlayerMinion() != Monsters[missile._misource].isPlayerMinion() //  the monsters are on opposing factions
+			            || (Monsters[missile._misource].flags & MFLAG_BERSERK) != 0              //  or the attacker is berserked
+			            || (monster.flags & MFLAG_BERSERK) != 0                                  //  or the target is berserked
+			            ))) {
+				// then the missile can potentially hit this target
+				isMonsterHit = MonsterTrapHit(monster, minDamage, maxDamage, missile._midist, missile._mitype, damageType, isDamageShifted);
+			} else if (IsAnyOf(missile._micaster, TARGET_BOTH, TARGET_MONSTERS)) {
+				isMonsterHit = MonsterMHit(*missile.sourcePlayer(), monster, minDamage, maxDamage, missile._midist, missile._mitype, missile.position.start, damageType, isDamageShifted);
+			}
 		}
 	}
 
@@ -507,8 +514,8 @@ void CheckMissileCol(Missile &missile, DamageType damageType, int minDamage, int
 
 	bool isPlayerHit = false;
 	bool blocked = false;
-	Player *player = PlayerAtPosition({ mx, my }, true);
-	if (player != nullptr) {
+	Player *player = PlayerAtPosition(position, !onlyHitWalking.has_value());
+	if (player != nullptr && (onlyHitWalking.has_value() ? (player->isWalking() && CheckCanHitOnlyWalking(missile, player->position, *onlyHitWalking)) : true)) {
 		if (missile._micaster != TARGET_BOTH && !missile.IsTrap()) {
 			if (missile._micaster == TARGET_MONSTERS) {
 				if (player->getId() != missile._misource)
@@ -532,8 +539,8 @@ void CheckMissileCol(Missile &missile, DamageType damageType, int minDamage, int
 		missile._miHitFlag = true;
 	}
 
-	if (IsMissileBlockedByTile({ mx, my })) {
-		Object *object = FindObjectAtPosition({ mx, my });
+	if (IsMissileBlockedByTile(position)) {
+		Object *object = FindObjectAtPosition(position);
 		if (object != nullptr && object->IsBreakable()) {
 			BreakObjectMissile(missile.sourcePlayer(), *object);
 		}
@@ -731,18 +738,56 @@ bool GuardianTryFireAt(Missile &missile, Point target)
 	return true;
 }
 
-bool GrowWall(int id, Point position, Point target, MissileID type, int spellLevel, int damage, bool skipWall = false)
+bool CanPlaceWall(Point position)
 {
+	if (!InDungeonBounds(position))
+		return false;
+
 	[[maybe_unused]] const int dp = dPiece[position.x][position.y];
 	assert(dp <= MAXTILES && dp >= 0);
 
-	if (TileHasAny(position, TileProperties::BlockMissile) || !InDungeonBounds(target)) {
-		return false;
+	return !TileHasAny(position, TileProperties::BlockMissile);
+}
+
+Missile *PlaceWall(int id, MissileID type, Point position, Direction direction, int spellLevel, int damage)
+{
+	return AddMissile(position, position + direction, direction, type, TARGET_BOTH, id, damage, spellLevel);
+}
+
+bool TryGrowWall(int id, MissileID type, Point position, Direction growDirection, Direction direction, int spellLevel, int damage)
+{
+	switch (growDirection) {
+	case Direction::South:
+	case Direction::West:
+	case Direction::North:
+	case Direction::East:
+		Point gapPos = position + Displacement(Right(growDirection)) - Displacement(growDirection);
+		if (CanPlaceWall(gapPos)) {
+			Missile *missile = PlaceWall(id, type, gapPos, direction, spellLevel, damage);
+			if (missile != nullptr) {
+				Displacement travelled = Displacement(Right(Right(growDirection))).worldToNormalScreen() * 30; // Move the wall to the edge to the next tile, but not over it
+				missile->position.traveled += travelled;
+				missile->_miDrawFlag = false;
+				missile->var3 = static_cast<int>(Left(Left(growDirection))) + 1;
+				UpdateMissilePos(*missile);
+				assert(gapPos == missile->position.tile); // Check that the tile we checked against (CanPlaceWall) didn't change
+			}
+		}
+		break;
 	}
 
-	if (!skipWall)
-		AddMissile(position, position, Direction::South, type, TARGET_BOTH, id, damage, spellLevel);
+	if (!CanPlaceWall(position))
+		return false;
+	PlaceWall(id, type, position, direction, spellLevel, damage);
 	return true;
+}
+
+std::optional<Point> MoveWallToNextPosition(Point position, Direction growDirection)
+{
+	Point nextPosition = position + growDirection;
+	if (!InDungeonBounds(nextPosition))
+		return std::nullopt;
+	return nextPosition;
 }
 
 /** @brief Sync missile position with parent missile */
@@ -977,10 +1022,8 @@ Direction16 GetDirection16(Point p1, Point p2)
 	return ret;
 }
 
-bool MonsterTrapHit(int monsterId, int mindam, int maxdam, int dist, MissileID t, DamageType damageType, bool shift)
+bool MonsterTrapHit(Monster &monster, int mindam, int maxdam, int dist, MissileID t, DamageType damageType, bool shift)
 {
-	Monster &monster = Monsters[monsterId];
-
 	if (!monster.isPossibleToHit() || monster.isImmune(t, damageType))
 		return false;
 
@@ -3020,7 +3063,10 @@ void ProcessFireWall(Missile &missile)
 		missile._miAnimFrame = 13;
 		missile._miAnimAdd = -1;
 	}
-	CheckMissileCol(missile, GetMissileData(missile._mitype).damageType(), missile._midam, missile._midam, true, missile.position.tile, true);
+	std::optional<Direction> onlyHitWalking = {};
+	if (missile.var3 != 0)
+		onlyHitWalking = static_cast<Direction>(missile.var3 - 1);
+	CheckMissileCol(missile, GetMissileData(missile._mitype).damageType(), missile._midam, missile._midam, true, missile.position.tile, true, onlyHitWalking);
 	if (missile.duration == 0) {
 		missile._miDelFlag = true;
 		AddUnLight(missile._mlid);
@@ -3152,7 +3198,10 @@ void ProcessLightningWall(Missile &missile)
 {
 	missile.duration--;
 	const int range = missile.duration;
-	CheckMissileCol(missile, GetMissileData(missile._mitype).damageType(), missile._midam, missile._midam, true, missile.position.tile, false);
+	std::optional<Direction> onlyHitWalking = {};
+	if (missile.var3 != 0)
+		onlyHitWalking = static_cast<Direction>(missile.var3 - 1);
+	CheckMissileCol(missile, GetMissileData(missile._mitype).damageType(), missile._midam, missile._midam, true, missile.position.tile, false, onlyHitWalking);
 	if (missile._miHitFlag)
 		missile.duration = range;
 	if (missile.duration == 0)
@@ -3725,45 +3774,6 @@ void ProcessRhino(Missile &missile)
 	PutMissile(missile);
 }
 
-/*
- * @brief Moves the control missile towards the right and grows walls.
- * @param missile The control missile.
- * @param type The missile ID of the wall missile.
- * @param dmg The damage of the wall missile.
- */
-static void ProcessWallControlLeft(Missile &missile, const MissileID type, const int dmg)
-{
-	const Point leftPosition = { missile.var1, missile.var2 };
-	const Point target = leftPosition + static_cast<Direction>(missile.var3);
-
-	if (!missile.limitReached && GrowWall(missile._misource, leftPosition, target, type, missile._mispllvl, dmg)) {
-		missile.var1 = target.x;
-		missile.var2 = target.y;
-	} else {
-		missile.limitReached = true;
-	}
-}
-
-/*
- * @brief Moves the control missile towards the right and grows walls.
- * @param missile The control missile.
- * @param type The missile ID of the wall missile.
- * @param dmg The damage of the wall missile.
- * @param skipTile Should the tile be skipped.
- */
-static void ProcessWallControlRight(Missile &missile, const MissileID type, const int dmg, const bool skipWall = false)
-{
-	const Point rightPosition = { missile.var5, missile.var6 };
-	const Point target = rightPosition + static_cast<Direction>(missile.var4);
-
-	if (missile.var7 == 0 && GrowWall(missile._misource, rightPosition, target, type, missile._mispllvl, dmg, skipWall)) {
-		missile.var5 = target.x;
-		missile.var6 = target.y;
-	} else {
-		missile.var7 = 1;
-	}
-}
-
 void ProcessWallControl(Missile &missile)
 {
 	missile.duration--;
@@ -3792,9 +3802,43 @@ void ProcessWallControl(Missile &missile)
 
 	const Point leftPosition = { missile.var1, missile.var2 };
 	const Point rightPosition = { missile.var5, missile.var6 };
+	const Direction leftDirection = static_cast<Direction>(missile.var3);
+	const Direction rightDirection = static_cast<Direction>(missile.var4);
 
-	ProcessWallControlLeft(missile, type, dmg);
-	ProcessWallControlRight(missile, type, dmg, leftPosition == rightPosition);
+	bool isStart = leftPosition == rightPosition;
+
+	std::optional<Point> nextLeftPosition = std::nullopt;
+	std::optional<Point> nextRightPosition = std::nullopt;
+
+	if (isStart) {
+		if (!CanPlaceWall(leftPosition)) {
+			missile._miDelFlag = true;
+			return;
+		}
+		PlaceWall(missile._misource, type, leftPosition, leftDirection, missile._mispllvl, dmg);
+		nextLeftPosition = MoveWallToNextPosition(leftPosition, leftDirection);
+		nextRightPosition = MoveWallToNextPosition(rightPosition, rightDirection);
+	} else {
+		if (!missile.limitReached && TryGrowWall(missile._misource, type, leftPosition, leftDirection, Direction::South, missile._mispllvl, dmg)) {
+			nextLeftPosition = MoveWallToNextPosition(leftPosition, leftDirection);
+		}
+		if (missile.var7 == 0 && TryGrowWall(missile._misource, type, rightPosition, rightDirection, Direction::South, missile._mispllvl, dmg)) {
+			nextRightPosition = MoveWallToNextPosition(rightPosition, rightDirection);
+		}
+	}
+
+	if (nextLeftPosition) {
+		missile.var1 = nextLeftPosition->x;
+		missile.var2 = nextLeftPosition->y;
+	} else {
+		missile.limitReached = true;
+	}
+	if (nextRightPosition) {
+		missile.var5 = nextRightPosition->x;
+		missile.var6 = nextRightPosition->y;
+	} else {
+		missile.var7 = 1;
+	}
 }
 
 void ProcessInfravision(Missile &missile)
@@ -3835,39 +3879,27 @@ void ProcessApocalypse(Missile &missile)
 
 void ProcessFlameWaveControl(Missile &missile)
 {
-	bool f1 = false;
-	bool f2 = false;
-
 	const int id = missile._misource;
+	const Direction pdir = Players[id]._pdir;
 	const Point src = missile.position.tile;
 	const Direction sd = GetDirection(src, { missile.var1, missile.var2 });
-	const Direction dira = Left(Left(sd));
-	const Direction dirb = Right(Right(sd));
-	Point na = src + sd;
-	[[maybe_unused]] int pn = dPiece[na.x][na.y];
-	assert(pn >= 0 && pn <= MAXTILES);
-	if (!TileHasAny(na, TileProperties::BlockMissile)) {
-		const Direction pdir = Players[id]._pdir;
-		AddMissile(na, na + sd, pdir, MissileID::FlameWave, TARGET_MONSTERS, id, 0, missile._mispllvl);
-		na += dira;
-		Point nb = src + sd + dirb;
-		for (int j = 0; j < (missile._mispllvl / 2) + 2; j++) {
-			pn = dPiece[na.x][na.y]; // BUGFIX: dPiece is accessed before check against dungeon size and 0
-			assert(pn >= 0 && pn <= MAXTILES);
-			if (TileHasAny(na, TileProperties::BlockMissile) || f1 || !InDungeonBounds(na)) {
-				f1 = true;
-			} else {
-				AddMissile(na, na + sd, pdir, MissileID::FlameWave, TARGET_MONSTERS, id, 0, missile._mispllvl);
-				na += dira;
-			}
-			pn = dPiece[nb.x][nb.y]; // BUGFIX: dPiece is accessed before check against dungeon size and 0
-			assert(pn >= 0 && pn <= MAXTILES);
-			if (TileHasAny(nb, TileProperties::BlockMissile) || f2 || !InDungeonBounds(nb)) {
-				f2 = true;
-			} else {
-				AddMissile(nb, nb + sd, pdir, MissileID::FlameWave, TARGET_MONSTERS, id, 0, missile._mispllvl);
-				nb += dirb;
-			}
+	const Point start = src + sd;
+	if (CanPlaceWall(start)) {
+		PlaceWall(id, MissileID::FlameWave, start, pdir, missile._mispllvl, 0);
+		int segmentsToAdd = (missile._mispllvl / 2) + 2;
+		Point left = start;
+		const Direction dirLeft = Left(Left(sd));
+		for (int j = 0; j < segmentsToAdd; j++) {
+			left += dirLeft;
+			if (!TryGrowWall(id, MissileID::FlameWave, left, dirLeft, pdir, missile._mispllvl, 0))
+				break;
+		}
+		Point right = start;
+		const Direction dirRight = Right(Right(sd));
+		for (int j = 0; j < segmentsToAdd; j++) {
+			right += dirRight;
+			if (!TryGrowWall(id, MissileID::FlameWave, right, dirRight, pdir, missile._mispllvl, 0))
+				break;
 		}
 	}
 
