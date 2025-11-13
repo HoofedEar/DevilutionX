@@ -3453,7 +3453,10 @@ void SpawnItem(Monster &monster, Point position, bool sendmsg, bool spawn /*= fa
 	GetSuperItemSpace(position, ii);
 	const int uper = monster.isUnique() ? 15 : 1;
 
-	const int8_t mLevel = monster.data().level;
+	// Previously was:
+	// const int8_t mLevel = monster.data().level;
+	const int8_t mLevel = monster.level(sgGameInitInfo.nDifficulty);
+
 	SetupAllItems(*MyPlayer, item, idx, AdvanceRndSeed(), mLevel, uper, onlygood, false);
 	TryRandomUniqueItem(item, idx, mLevel, uper, onlygood, false);
 	SetupItem(item);
