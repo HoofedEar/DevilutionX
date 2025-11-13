@@ -2437,6 +2437,8 @@ void Player::_addExperience(uint32_t experience, int levelDelta)
 		return;
 	}
 
+	experience = experience * 3 / 2; // Experience rates are increased by 1.5x :D
+
 	// Adjust xp based on difference between the players current level and the target level (usually a monster level)
 	uint32_t clampedExp = static_cast<uint32_t>(std::clamp<int64_t>(static_cast<int64_t>(experience * (1 + levelDelta / 10.0)), 0, std::numeric_limits<uint32_t>::max()));
 
