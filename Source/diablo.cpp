@@ -954,7 +954,7 @@ void RunGameLoop(interface_mode uMsg)
 
 	if (cineflag) {
 		cineflag = false;
-		DoEnding();
+		// DoEnding();
 	}
 }
 
