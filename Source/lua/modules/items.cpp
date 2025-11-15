@@ -346,6 +346,7 @@ void RegisterItemIndexEnum(sol::state_view &lua)
 	        { "RuneOfStone", IDI_RUNEOFSTONE },
 	        { "SorcererDiablo", IDI_SORCERER_DIABLO },
 	        { "ArenaPotion", IDI_ARENAPOT },
+	        { "OrbOfAugmentation", IDI_ORB_AUGMENTATION },
 	        { "None", IDI_NONE },
 	    });
 }

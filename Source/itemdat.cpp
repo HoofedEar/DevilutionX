@@ -98,6 +98,7 @@ tl::expected<item_cursor_graphic, std::string> ParseItemCursorGraphic(std::strin
 	if (value == "EAR_SORCERER") return ICURS_EAR_SORCERER;
 	if (value == "EAR_WARRIOR") return ICURS_EAR_WARRIOR;
 	if (value == "EAR_ROGUE") return ICURS_EAR_ROGUE;
+	if (value == "GOLD_SPHERE") return ICURS_GOLD_SPHERE;
 	if (value == "BLOOD_STONE") return ICURS_BLOOD_STONE;
 	if (value == "OIL") return ICURS_OIL;
 	if (value == "ELIXIR_OF_VITALITY") return ICURS_ELIXIR_OF_VITALITY;

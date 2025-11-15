@@ -107,7 +107,7 @@ int MaxGold = GOLD_MAX_LIMIT;
 int8_t ItemCAnimTbl[] = {
 	20, 16, 16, 16, 4, 4, 4, 12, 12, 12,
 	12, 12, 12, 12, 12, 21, 21, 25, 12, 28,
-	28, 28, 38, 38, 38, 32, 38, 38, 38, 24,
+	28, 28, 12, 38, 38, 38, 32, 38, 38, 38, 24,
 	24, 26, 2, 25, 22, 23, 24, 21, 27, 27,
 	29, 0, 0, 0, 12, 12, 12, 12, 12, 0,
 	8, 8, 0, 8, 8, 8, 8, 8, 8, 6,
@@ -1480,6 +1480,7 @@ void ItemRndDur(Item &item)
 		item._iDurability = GenerateRnd(item._iMaxDur / 2) + (item._iMaxDur / 4) + 1;
 }
 
+// Can adjust drop rates here
 int GetItemBLevel(int lvl, item_misc_id miscId, bool onlygood, bool uper15)
 {
 	int iblvl = -1;
