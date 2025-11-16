@@ -387,6 +387,7 @@ void AddHealOther(Missile &missile, AddMissileParameter &parameter);
  */
 void AddElemental(Missile &missile, AddMissileParameter &parameter);
 void AddIdentify(Missile &missile, AddMissileParameter &parameter);
+void AddAugment(Missile &missile, AddMissileParameter &parameter);
 
 /**
  * var1: X coordinate of the first wave

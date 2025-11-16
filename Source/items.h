@@ -546,6 +546,8 @@ void FreeItemGFX();
 void GetItemFrm(Item &item);
 void GetItemStr(Item &item);
 void CheckIdentify(Player &player, int cii);
+void DoAugment(Player &player, int cii);
+void AugmentItem(Item &item, const Player &player);
 void DoRepair(Player &player, int cii);
 void DoRecharge(Player &player, int cii);
 bool DoOil(Player &player, int cii);

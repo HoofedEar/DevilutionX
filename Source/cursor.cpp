@@ -461,13 +461,20 @@ void FreeCursor()
 ClxSprite GetInvItemSprite(int cursId)
 {
 	assert(cursId > 0);
+	// Special cursors (< CURSOR_FIRSTITEM) use direct sprite index mapping
+	// Item cursors (>= CURSOR_FIRSTITEM) need to be offset to account for the sprite file layout
+	// Sprite file has: special cursor sprites at 0-11, then item sprites starting at 11
+	const int spriteIndex = (cursId < CURSOR_FIRSTITEM)
+	    ? (cursId - 1)                      // Special cursor: direct mapping (CURSOR_HAND=1 -> sprite 0)
+	    : (cursId - CURSOR_FIRSTITEM + 11); // Item cursor: offset by 11 (CURSOR_FIRSTITEM+0 -> sprite 11)
+
 	const size_t numSprites = pCursCels->numSprites();
-	if (static_cast<size_t>(cursId) <= numSprites) {
-		return (*pCursCels)[cursId - 1];
+	if (static_cast<size_t>(spriteIndex) < numSprites) {
+		return (*pCursCels)[spriteIndex];
 	}
 	assert(pCursCels2.has_value());
-	assert(cursId - numSprites <= pCursCels2->numSprites());
-	return (*pCursCels2)[cursId - numSprites - 1];
+	assert(spriteIndex - numSprites < static_cast<int>(pCursCels2->numSprites()));
+	return (*pCursCels2)[spriteIndex - numSprites];
 }
 
 Size GetInvItemSize(int cursId)
@@ -847,7 +854,7 @@ bool CheckPanelsAndFlags(Rectangle mainPanel)
 
 bool CheckCursorActions(const Point currentTile, bool flipflag)
 {
-	if (pcurs == CURSOR_IDENTIFY) {
+	if (pcurs == CURSOR_IDENTIFY || pcurs == CURSOR_AUGMENT) {
 		ObjectUnderCursor = nullptr;
 		pcursmonst = -1;
 		pcursitem = -1;

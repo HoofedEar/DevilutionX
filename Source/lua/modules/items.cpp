@@ -280,6 +280,7 @@ void RegisterSpellIDEnum(sol::state_view &lua)
 	        { "RuneOfImmolation", SpellID::RuneOfImmolation },
 	        { "RuneOfStone", SpellID::RuneOfStone },
 	        { "Invalid", SpellID::Invalid },
+	        { "Augment", SpellID::Augment },
 	    });
 }
 
