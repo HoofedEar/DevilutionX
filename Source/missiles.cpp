@@ -2518,6 +2518,23 @@ void AddIdentify(Missile &missile, AddMissileParameter & /*parameter*/)
 	}
 }
 
+void AddAugment(Missile &missile, AddMissileParameter & /*parameter*/)
+{
+	Player &player = Players[missile._misource];
+
+	missile._miDelFlag = true;
+	if (&player == MyPlayer) {
+		if (SpellbookFlag)
+			SpellbookFlag = false;
+		if (!invflag) {
+			invflag = true;
+			if (ControlMode != ControlTypes::KeyboardAndMouse)
+				FocusOnInventory();
+		}
+		NewCursor(CURSOR_AUGMENT);
+	}
+}
+
 void AddWallControl(Missile &missile, AddMissileParameter &parameter)
 {
 	std::optional<Point> spreadPosition = FindClosestValidPosition(

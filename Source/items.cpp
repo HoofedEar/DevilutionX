@@ -1779,7 +1779,7 @@ void printItemMiscGenericGamepad(const Item &item, const bool isOil, bool isCast
 {
 	if (item._iMiscId == IMISC_MAPOFDOOM) {
 		AddItemInfoBoxString(_("Activate to view"));
-	} else if (isOil) {
+	} else if (isOil || item._iMiscId == IMISC_ORBAUGMENT) {
 		PrintItemOil(item._iMiscId);
 		if (!invflag) {
 			AddItemInfoBoxString(_("Open inventory to use"));
@@ -1833,7 +1833,7 @@ void PrintItemMisc(const Item &item)
 	    || (item._iMiscId > IMISC_RUNEFIRST && item._iMiscId < IMISC_RUNELAST)
 	    || item._iMiscId == IMISC_ARENAPOT;
 	const bool mouseRequiresTarget = (item._iMiscId == IMISC_SCROLLT && item._iSpell != SpellID::Flash)
-	    || (item._iMiscId == IMISC_SCROLL && IsAnyOf(item._iSpell, SpellID::TownPortal, SpellID::Identify));
+	    || (item._iMiscId == IMISC_SCROLL && IsAnyOf(item._iSpell, SpellID::TownPortal, SpellID::Identify, SpellID::Augment));
 	const bool gamepadRequiresTarget = item.isScroll() && TargetsMonster(item._iSpell);
 
 	switch (ControlMode) {
@@ -3833,6 +3833,51 @@ void CheckIdentify(Player &player, int cii)
 	CalcPlrInv(player, true);
 }
 
+void DoAugment(Player &player, int cii)
+{
+	Item *pi;
+
+	PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
+
+	if (cii >= NUM_INVLOC) {
+		pi = &player.InvList[cii - NUM_INVLOC];
+	} else {
+		pi = &player.InvBody[cii];
+	}
+
+	AugmentItem(*pi, player);
+	CalcPlrInv(player, true);
+}
+
+void AugmentItem(Item &item, const Player &player)
+{
+	// Only augment normal quality items
+	if (item._iMagical != ITEM_QUALITY_NORMAL) {
+		return;
+	}
+
+	// Don't augment gold or quest items
+	if (item._itype == ItemType::Gold || item._itype == ItemType::None) {
+		return;
+	}
+
+	// Roll magic affixes based on player level
+	int plvl = player.getCharacterLevel();
+
+	// Set a new seed for randomization
+	item._iSeed = AdvanceRndSeed();
+	SetRndSeed(item._iSeed);
+
+	// Update creation info to mark as magic
+	item._iCreateInfo = plvl;
+
+	// GetItemBonus will set _iMagical to ITEM_QUALITY_MAGIC when it adds affixes
+	GetItemBonus(player, item, plvl / 2, plvl, false, true);
+
+	// Mark the item as identified so the player can see the new properties
+	item._iIdentified = true;
+}
+
 void DoRepair(Player &player, int cii)
 {
 	Item *pi;
@@ -4345,6 +4390,9 @@ void UseItem(Player &player, item_misc_id mid, SpellID spellID, int spellFrom)
 		break;
 	case IMISC_RUNES:
 		prepareSpellID = SpellID::RuneOfStone;
+		break;
+	case IMISC_ORBAUGMENT:
+		prepareSpellID = SpellID::Augment;
 		break;
 	default:
 		break;
