@@ -3835,13 +3835,42 @@ void CheckIdentify(Player &player, int cii)
 
 void DoAugment(Player &player, int cii)
 {
-	PlaySFX(SfxID::ItemAnvil);
+	Item *pi;
+
+	if (cii >= NUM_INVLOC)
+		pi = &player.InvList[cii - NUM_INVLOC];
+	else
+		pi = &player.InvBody[cii];
+
+	AugmentItem(*pi, player);
 	CalcPlrInv(player, true);
 }
 
 void AugmentItem(Item &item, const Player &player)
 {
-	PlaySFX(SfxID::ItemAnvil);
+	// If the item is not a weapon, armor, or shield, do nothing
+	if (item._itype == ItemType::Misc || item._itype == ItemType::Staff || item._itype == ItemType::Gold || item._itype == ItemType::Ring || item._itype == ItemType::Amulet) {
+		return;
+	}
+
+	// If the item is not normal, do nothing
+	if (item._iMagical != ITEM_QUALITY_NORMAL) {
+		return;
+	}
+
+	// Players plvl
+	const int plvl = player.getCharacterLevel();
+
+	// Make the item magical by using the "GetItemBonus" function with onlygood=true and uper=1
+	// Be sure to reroll the RNG
+	GenerateNewSeed(item);
+	const int itemLevel = std::max(1, player.getCharacterLevel() / 2);
+	GetItemBonus(player, item, plvl / 2, plvl, true, true);
+
+	// Mark the item as identified
+	item._iIdentified = true;
+
+	PlaySfxLoc(SfxID::SpellRepair, player.position.tile);
 }
 
 void DoRepair(Player &player, int cii)
