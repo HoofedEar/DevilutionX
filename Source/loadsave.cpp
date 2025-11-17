@@ -62,11 +62,11 @@ T SwapLE(T in)
 {
 	switch (sizeof(T)) {
 	case 2:
-		return Swap16LE(in);
+		return static_cast<T>(Swap16LE(static_cast<uint16_t>(in)));
 	case 4:
-		return Swap32LE(in);
+		return static_cast<T>(Swap32LE(static_cast<uint32_t>(in)));
 	case 8:
-		return Swap64LE(in);
+		return static_cast<T>(Swap64LE(in));
 	default:
 		return in;
 	}

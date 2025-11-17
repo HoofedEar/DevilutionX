@@ -591,7 +591,7 @@ void DrawConsole(const Surface &out)
 
 	if (FirstRender) {
 		SDL_Rect sdlInputRect = MakeSdlRect(InputRect);
-		SDL_SetTextInputArea(ghMainWnd, &sdlInputRect, ConsoleInputState.cursorPosition());
+		SDL_SetTextInputArea(ghMainWnd, &sdlInputRect, static_cast<int>(ConsoleInputState.cursorPosition()));
 		SDLC_StartTextInput(ghMainWnd);
 		FirstRender = false;
 		if (ConsoleLines.empty()) {
