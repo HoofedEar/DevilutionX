@@ -503,7 +503,10 @@ void CreateHalfSizeItemSprites()
 {
 	if (HalfSizeItemSprites != nullptr)
 		return;
-	const uint32_t numInvItems = pCursCels->numSprites() - (static_cast<uint32_t>(CURSOR_FIRSTITEM) - 1)
+	// Item sprites in objcurs.cel always start at index 11 (after the 11 special cursor sprites 0-10)
+	// CURSOR_AUGMENT reuses CURSOR_REPAIR sprite, so it doesn't affect this offset
+	constexpr size_t ItemSpritesStartIndex = 11;
+	const uint32_t numInvItems = pCursCels->numSprites() - ItemSpritesStartIndex
 	    + (pCursCels2.has_value() ? pCursCels2->numSprites() : 0);
 	HalfSizeItemSprites = new OptionalOwnedClxSpriteList[numInvItems];
 	HalfSizeItemSpritesRed = new OptionalOwnedClxSpriteList[numInvItems];
@@ -539,7 +542,7 @@ void CreateHalfSizeItemSprites()
 	};
 
 	size_t outputIndex = 0;
-	for (size_t i = static_cast<int>(CURSOR_FIRSTITEM) - 1, n = pCursCels->numSprites(); i < n; ++i, ++outputIndex) {
+	for (size_t i = ItemSpritesStartIndex, n = pCursCels->numSprites(); i < n; ++i, ++outputIndex) {
 		createHalfSize((*pCursCels)[i], outputIndex);
 	}
 	if (pCursCels2.has_value()) {
