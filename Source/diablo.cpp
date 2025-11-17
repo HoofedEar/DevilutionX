@@ -402,12 +402,14 @@ void LeftMouseDown(uint16_t modState)
 			}
 		}
 	} else {
-		if (!ChatFlag && !DropGoldFlag && !IsWithdrawGoldOpen && !gmenu_is_active())
-			CheckInvScrn(isShiftHeld, isCtrlHeld);
-		CheckMainPanelButton();
-		CheckStashButtonPress(MousePosition);
-		if (pcurs > CURSOR_HAND && pcurs < CURSOR_FIRSTITEM)
-			NewCursor(CURSOR_HAND);
+		if (!TryIconCurs()) {
+			if (!ChatFlag && !DropGoldFlag && !IsWithdrawGoldOpen && !gmenu_is_active())
+				CheckInvScrn(isShiftHeld, isCtrlHeld);
+			CheckMainPanelButton();
+			CheckStashButtonPress(MousePosition);
+			if (pcurs > CURSOR_HAND && pcurs < CURSOR_FIRSTITEM)
+				NewCursor(CURSOR_HAND);
+		}
 	}
 }
 

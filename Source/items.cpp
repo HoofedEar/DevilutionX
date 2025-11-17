@@ -3835,47 +3835,13 @@ void CheckIdentify(Player &player, int cii)
 
 void DoAugment(Player &player, int cii)
 {
-	Item *pi;
-
-	PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
-
-	if (cii >= NUM_INVLOC) {
-		pi = &player.InvList[cii - NUM_INVLOC];
-	} else {
-		pi = &player.InvBody[cii];
-	}
-
-	AugmentItem(*pi, player);
+	PlaySFX(SfxID::ItemAnvil);
 	CalcPlrInv(player, true);
 }
 
 void AugmentItem(Item &item, const Player &player)
 {
-	// Only augment normal quality items
-	if (item._iMagical != ITEM_QUALITY_NORMAL) {
-		return;
-	}
-
-	// Don't augment gold or quest items
-	if (item._itype == ItemType::Gold || item._itype == ItemType::None) {
-		return;
-	}
-
-	// Roll magic affixes based on player level
-	int plvl = player.getCharacterLevel();
-
-	// Set a new seed for randomization
-	item._iSeed = AdvanceRndSeed();
-	SetRndSeed(item._iSeed);
-
-	// Update creation info to mark as magic
-	item._iCreateInfo = plvl;
-
-	// GetItemBonus will set _iMagical to ITEM_QUALITY_MAGIC when it adds affixes
-	GetItemBonus(player, item, plvl / 2, plvl, false, true);
-
-	// Mark the item as identified so the player can see the new properties
-	item._iIdentified = true;
+	PlaySFX(SfxID::ItemAnvil);
 }
 
 void DoRepair(Player &player, int cii)
@@ -4370,6 +4336,18 @@ void UseItem(Player &player, item_misc_id mid, SpellID spellID, int spellFrom)
 		}
 		NewCursor(CURSOR_OIL);
 		break;
+	case IMISC_ORBAUGMENT:
+		if (&player != MyPlayer) {
+			return;
+		}
+		if (SpellbookFlag) {
+			SpellbookFlag = false;
+		}
+		if (!invflag) {
+			invflag = true;
+		}
+		NewCursor(CURSOR_AUGMENT);
+		break;
 	case IMISC_SPECELIX:
 		ModifyPlrStr(player, 3);
 		ModifyPlrMag(player, 3);
@@ -4390,9 +4368,6 @@ void UseItem(Player &player, item_misc_id mid, SpellID spellID, int spellFrom)
 		break;
 	case IMISC_RUNES:
 		prepareSpellID = SpellID::RuneOfStone;
-		break;
-	case IMISC_ORBAUGMENT:
-		prepareSpellID = SpellID::Augment;
 		break;
 	default:
 		break;
