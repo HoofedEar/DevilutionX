@@ -1784,6 +1784,8 @@ void printItemMiscKBM(const Item &item, const bool isOil, const bool isCastOnTar
 {
 	if (item._iMiscId == IMISC_MAPOFDOOM) {
 		AddItemInfoBoxString(_("Right-click to view"));
+	} else if (item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS) {
+		AddItemInfoBoxString(_("Right-click to use, then\nleft-click to target"));
 	} else if (isOil) {
 		PrintItemOil(item._iMiscId);
 		AddItemInfoBoxString(_("Right-click to use"));
@@ -1852,7 +1854,7 @@ void PrintItemMisc(const Item &item)
 	    || (item._iMiscId > IMISC_RUNEFIRST && item._iMiscId < IMISC_RUNELAST)
 	    || item._iMiscId == IMISC_ARENAPOT;
 	const bool mouseRequiresTarget = (item._iMiscId == IMISC_SCROLLT && item._iSpell != SpellID::Flash)
-	    || (item._iMiscId == IMISC_SCROLL && IsAnyOf(item._iSpell, SpellID::TownPortal, SpellID::Identify, SpellID::Augment));
+	    || (item._iMiscId == IMISC_SCROLL && IsAnyOf(item._iSpell, SpellID::TownPortal, SpellID::Identify));
 	const bool gamepadRequiresTarget = item.isScroll() && TargetsMonster(item._iSpell);
 
 	switch (ControlMode) {
@@ -3978,7 +3980,7 @@ bool ChaosItem(Item &item, const Player &player)
 	// Have a 50/50 chance to instead destroy the item
 	if (GenerateRnd(100) < 50) {
 		item.clear();
-		PlaySfxLoc(SfxID::TriggerTrap, player.position.tile);
+		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
 		return false;
 	}
 
