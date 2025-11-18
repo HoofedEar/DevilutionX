@@ -3910,28 +3910,19 @@ void DoChaos(Player &player, int cii)
 
 	ChaosItem(*pi, player);
 
-	// If the item was in inventory (not equipped), check if it still fits
+	// If the item was in inventory (not equipped), check if size changed
 	if (isInInventory && invListIndex != -1) {
 		const Size newSize = GetInventorySize(*pi);
 
-		// Find the current grid position of the item
-		int currentGridSlot = -1;
-		for (int i = 0; i < InventoryGridCells; i++) {
-			if (std::abs(player.InvGrid[i]) - 1 == invListIndex) {
-				currentGridSlot = i;
-				break;
-			}
-		}
-
-		// Check if the transformed item still fits in its current position
-		if (currentGridSlot != -1 && !CheckItemFitsInInventorySlot(player, currentGridSlot, newSize, invListIndex)) {
-			// Item doesn't fit anymore, need to relocate or drop it
+		// If the size changed, revalidate inventory fit
+		if (newSize.width != originalSize.width || newSize.height != originalSize.height) {
+			// Make a copy of the transformed item
 			Item itemCopy = *pi;
 
-			// Remove the item from inventory
+			// Remove the item from inventory (this clears grid and shifts items)
 			player.RemoveInvItem(invListIndex, false);
 
-			// Try to place it in a new position
+			// Try to place it back in inventory at any valid position
 			if (!AutoPlaceItemInInventory(player, itemCopy, &player == MyPlayer)) {
 				// No space in inventory, drop it on the ground
 				const int itemIndex = AllocateItem();
