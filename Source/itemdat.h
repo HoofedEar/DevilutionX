@@ -133,6 +133,7 @@ enum item_cursor_graphic : uint8_t {
 	ICURS_EAR_ROGUE                   = 21,
 	ICURS_GOLD_SPHERE 			      = 22, // Added by me, gold sphere is here
 	ICURS_BLOOD_STONE                 = 25,
+	ICURS_RED_SPHERE                  = 26,
 	ICURS_OIL                         = 30,
 	ICURS_ELIXIR_OF_VITALITY          = 31,
 	ICURS_POTION_OF_HEALING           = 32,
@@ -490,6 +491,7 @@ enum item_misc_id : int8_t {
 	IMISC_NOTE,
 	IMISC_ARENAPOT,
 	IMISC_ORBAUGMENT,
+	IMISC_ORBCHAOS,
 	IMISC_INVALID = -1,
 };
 

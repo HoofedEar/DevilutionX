@@ -464,9 +464,9 @@ ClxSprite GetInvItemSprite(int cursId)
 	// Special cursors (< CURSOR_FIRSTITEM) use direct sprite index mapping
 	// Item cursors (>= CURSOR_FIRSTITEM) need to be offset to account for the sprite file layout
 	// Sprite file has: special cursor sprites at 0-10, then item sprites starting at 11
-	// CURSOR_AUGMENT reuses CURSOR_REPAIR sprite since no dedicated sprite exists
+	// CURSOR_AUGMENT and CURSOR_CHAOS reuse CURSOR_REPAIR sprite since no dedicated sprite exists
 	int spriteIndex;
-	if (cursId == CURSOR_AUGMENT) {
+	if (cursId == CURSOR_AUGMENT || cursId == CURSOR_CHAOS) {
 		spriteIndex = CURSOR_REPAIR - 1; // Reuse CURSOR_REPAIR sprite (hammer)
 	} else if (cursId < CURSOR_FIRSTITEM) {
 		spriteIndex = cursId - 1;          // Special cursor: direct mapping (CURSOR_HAND=1 -> sprite 0)
@@ -863,7 +863,7 @@ bool CheckPanelsAndFlags(Rectangle mainPanel)
 
 bool CheckCursorActions(const Point currentTile, bool flipflag)
 {
-	if (pcurs == CURSOR_IDENTIFY || pcurs == CURSOR_AUGMENT) {
+	if (pcurs == CURSOR_IDENTIFY || pcurs == CURSOR_AUGMENT || pcurs == CURSOR_CHAOS) {
 		ObjectUnderCursor = nullptr;
 		pcursmonst = -1;
 		pcursitem = -1;

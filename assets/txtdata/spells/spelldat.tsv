@@ -36,3 +36,4 @@ HealOther	Heal Other	CastHealing	100	5	5	Magic,AllowedInTown	1	1	17	HealOther	3	
 BloodStar	Blood Star	CastFire	2750	180	25	Magic	14	13	70	BloodStar	2	14	20	60
 BoneSpirit	Bone Spirit	CastFire	1150	80	24	Magic	9	7	34	BoneSpirit	1	12	20	60
 Augment	Augment	CastSkill	0	10	13	Magic,AllowedInTown	-1	-1	23	Augment	2	1	8	12
+Chaos	Chaos	CastSkill	0	10	13	Magic,AllowedInTown	-1	-1	23	Chaos	2	1	8	12

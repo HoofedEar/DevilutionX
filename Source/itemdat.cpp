@@ -100,6 +100,7 @@ tl::expected<item_cursor_graphic, std::string> ParseItemCursorGraphic(std::strin
 	if (value == "EAR_ROGUE") return ICURS_EAR_ROGUE;
 	if (value == "GOLD_SPHERE") return ICURS_GOLD_SPHERE;
 	if (value == "BLOOD_STONE") return ICURS_BLOOD_STONE;
+	if (value == "RED_SPHERE") return ICURS_RED_SPHERE;
 	if (value == "OIL") return ICURS_OIL;
 	if (value == "ELIXIR_OF_VITALITY") return ICURS_ELIXIR_OF_VITALITY;
 	if (value == "POTION_OF_HEALING") return ICURS_POTION_OF_HEALING;
@@ -456,6 +457,7 @@ tl::expected<item_misc_id, std::string> ParseItemMiscId(std::string_view value)
 	if (value == "NOTE") return IMISC_NOTE;
 	if (value == "ARENAPOT") return IMISC_ARENAPOT;
 	if (value == "ORBAUGMENT") return IMISC_ORBAUGMENT;
+	if (value == "ORBCHAOS") return IMISC_ORBCHAOS;
 	return tl::make_unexpected("Unknown enum value");
 }
 

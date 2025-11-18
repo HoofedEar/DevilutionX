@@ -84,8 +84,9 @@ enum class SpellID : int8_t {
 	RuneOfImmolation,
 	RuneOfStone,
 	Augment,
+	Chaos,
 
-	LAST = Augment,
+	LAST = Chaos,
 	Invalid = -1,
 };
 
@@ -209,8 +210,9 @@ enum class MissileID : int8_t {
 	BlueExplosion2,
 	OrangeExplosion,
 	Augment,
+	Chaos,
 
-	LAST = Augment,
+	LAST = Chaos,
 	Null = -1,
 	// clang-format on
 };

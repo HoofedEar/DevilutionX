@@ -163,6 +163,7 @@ tl::expected<MissileID, std::string> ParseMissileId(std::string_view value)
 	if (value == "BlueExplosion2") return MissileID::BlueExplosion2;
 	if (value == "OrangeExplosion") return MissileID::OrangeExplosion;
 	if (value == "Augment") return MissileID::Augment;
+	if (value == "Chaos") return MissileID::Chaos;
 	return tl::make_unexpected("Unknown enum value");
 }
 
@@ -226,6 +227,7 @@ tl::expected<SpellID, std::string> ParseSpellId(std::string_view value)
 	if (value == "RuneOfImmolation") return SpellID::RuneOfImmolation;
 	if (value == "RuneOfStone") return SpellID::RuneOfStone;
 	if (value == "Augment") return SpellID::Augment;
+	if (value == "Chaos") return SpellID::Chaos;
 	return tl::make_unexpected("Unknown enum value");
 }
 

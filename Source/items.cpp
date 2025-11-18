@@ -107,7 +107,7 @@ int MaxGold = GOLD_MAX_LIMIT;
 int8_t ItemCAnimTbl[] = {
 	20, 16, 16, 16, 4, 4, 4, 12, 12, 12,
 	12, 12, 12, 12, 12, 21, 21, 25, 12, 28,
-	28, 28, 12, 38, 38, 32, 38, 38, 38, 24,
+	28, 28, 12, 38, 38, 32, 12, 38, 38, 24,
 	24, 26, 2, 25, 22, 23, 24, 21, 27, 27,
 	29, 0, 0, 0, 12, 12, 12, 12, 12, 0,
 	8, 8, 0, 8, 8, 8, 8, 8, 8, 6,
@@ -1429,6 +1429,25 @@ std::vector<uint8_t> GetValidUniques(int lvl, unique_base_item baseItemId)
 	return validUniques;
 }
 
+std::vector<uint8_t> GetValidUniquesByType(int lvl, ItemType itemType)
+{
+	std::vector<uint8_t> validUniques;
+	int index = 0;
+	for (const UniqueItem &itemData : UniqueItems) {
+		// Find the base item's type
+		const unique_base_item baseItemId = itemData.UIItemId;
+		// Search through AllItemsList to find the ItemType for this base item
+		for (const ItemData &baseItem : AllItemsList) {
+			if (baseItem.iItemId == baseItemId && baseItem.itype == itemType && lvl >= itemData.UIMinLvl) {
+				validUniques.push_back(index);
+				break; // Found a match, move to next unique
+			}
+		}
+		index++;
+	}
+	return validUniques;
+}
+
 _unique_items CheckUnique(Item &item, int lvl, int uper, int uidOffset = 0)
 {
 	if (GenerateRnd(100) > uper)
@@ -1779,7 +1798,7 @@ void printItemMiscGenericGamepad(const Item &item, const bool isOil, bool isCast
 {
 	if (item._iMiscId == IMISC_MAPOFDOOM) {
 		AddItemInfoBoxString(_("Activate to view"));
-	} else if (isOil || item._iMiscId == IMISC_ORBAUGMENT) {
+	} else if (isOil || item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS) {
 		PrintItemOil(item._iMiscId);
 		if (!invflag) {
 			AddItemInfoBoxString(_("Open inventory to use"));
@@ -3873,6 +3892,104 @@ void AugmentItem(Item &item, const Player &player)
 	PlaySfxLoc(SfxID::SpellRepair, player.position.tile);
 }
 
+void DoChaos(Player &player, int cii)
+{
+	Item *pi;
+	bool isInInventory = (cii >= NUM_INVLOC);
+	int invListIndex = -1;
+
+	if (isInInventory) {
+		invListIndex = cii - NUM_INVLOC;
+		pi = &player.InvList[invListIndex];
+	} else {
+		pi = &player.InvBody[cii];
+	}
+
+	// Store original size before transformation
+	const Size originalSize = GetInventorySize(*pi);
+
+	ChaosItem(*pi, player);
+
+	// If the item was in inventory (not equipped), check if it still fits
+	if (isInInventory && invListIndex != -1) {
+		const Size newSize = GetInventorySize(*pi);
+
+		// Find the current grid position of the item
+		int currentGridSlot = -1;
+		for (int i = 0; i < InventoryGridCells; i++) {
+			if (std::abs(player.InvGrid[i]) - 1 == invListIndex) {
+				currentGridSlot = i;
+				break;
+			}
+		}
+
+		// Check if the transformed item still fits in its current position
+		if (currentGridSlot != -1 && !CheckItemFitsInInventorySlot(player, currentGridSlot, newSize, invListIndex)) {
+			// Item doesn't fit anymore, need to relocate or drop it
+			Item itemCopy = *pi;
+
+			// Remove the item from inventory
+			player.RemoveInvItem(invListIndex, false);
+
+			// Try to place it in a new position
+			if (!AutoPlaceItemInInventory(player, itemCopy, &player == MyPlayer)) {
+				// No space in inventory, drop it on the ground
+				const int itemIndex = AllocateItem();
+				Items[itemIndex] = itemCopy;
+				GetSuperItemSpace(player.position.tile, itemIndex);
+				NetSendCmdPItem(false, CMD_SPAWNITEM, Items[itemIndex].position, Items[itemIndex]);
+
+				if (&player == MyPlayer) {
+					player.Say(HeroSpeech::ICantCarryAnymore);
+				}
+			}
+		}
+	}
+
+	CalcPlrInv(player, true);
+}
+
+void ChaosItem(Item &item, const Player &player)
+{
+	// If the item is not a weapon, armor, or shield, do nothing
+	if (item._itype == ItemType::Misc || item._itype == ItemType::Staff || item._itype == ItemType::Gold || item._itype == ItemType::Ring || item._itype == ItemType::Amulet) {
+		return;
+	}
+
+	// If the item is not magic, do nothing
+	if (item._iMagical != ITEM_QUALITY_MAGIC) {
+		return;
+	}
+
+	// Get the item's type (Sword, Axe, Bow, etc.)
+	const ItemType itemType = item._itype;
+
+	// Get the player's level to determine which uniques are available
+	const int plvl = player.getCharacterLevel();
+
+	// Get all valid unique items for this item type (not just the specific base item)
+	// This allows daggers to roll any unique sword, clubs to roll any unique mace, etc.
+	auto validUniques = GetValidUniquesByType(plvl, itemType);
+
+	// If there are no valid uniques for this item type, do nothing
+	if (validUniques.empty()) {
+		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
+		return;
+	}
+
+	// Pick a random unique from the valid ones
+	const int randomIndex = GenerateRnd(validUniques.size());
+	const _unique_items selectedUniqueId = static_cast<_unique_items>(validUniques[randomIndex]);
+
+	// Apply the unique item properties
+	GetUniqueItem(player, item, selectedUniqueId);
+
+	// Mark the item as identified
+	item._iIdentified = true;
+
+	PlaySfxLoc(SfxID::SpellRepair, player.position.tile);
+}
+
 void DoRepair(Player &player, int cii)
 {
 	Item *pi;
@@ -4376,6 +4493,18 @@ void UseItem(Player &player, item_misc_id mid, SpellID spellID, int spellFrom)
 			invflag = true;
 		}
 		NewCursor(CURSOR_AUGMENT);
+		break;
+	case IMISC_ORBCHAOS:
+		if (&player != MyPlayer) {
+			return;
+		}
+		if (SpellbookFlag) {
+			SpellbookFlag = false;
+		}
+		if (!invflag) {
+			invflag = true;
+		}
+		NewCursor(CURSOR_CHAOS);
 		break;
 	case IMISC_SPECELIX:
 		ModifyPlrStr(player, 3);
