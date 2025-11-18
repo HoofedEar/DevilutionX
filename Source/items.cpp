@@ -3972,7 +3972,6 @@ bool ChaosItem(Item &item, const Player &player)
 
 	// If there are no valid uniques for this item type, do nothing
 	if (validUniques.empty()) {
-		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
 		return false;
 	}
 
@@ -3980,7 +3979,7 @@ bool ChaosItem(Item &item, const Player &player)
 	// Have a 50/50 chance to instead destroy the item
 	if (GenerateRnd(100) < 50) {
 		item.clear();
-		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
+		PlaySfxLoc(SfxID::BarrelBreak, player.position.tile);
 		return false;
 	}
 
