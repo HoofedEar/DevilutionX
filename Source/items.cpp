@@ -3908,30 +3908,36 @@ void DoChaos(Player &player, int cii)
 	// Store original size before transformation
 	const Size originalSize = GetInventorySize(*pi);
 
-	ChaosItem(*pi, player);
+	bool result = ChaosItem(*pi, player);
 
-	// If the item was in inventory (not equipped), check if size changed
+	// Handle the result based on whether item was transformed or destroyed
 	if (isInInventory && invListIndex != -1) {
-		const Size newSize = GetInventorySize(*pi);
+		if (!result && pi->isEmpty()) {
+			// Item was destroyed (50/50 chance failed), properly remove it from inventory
+			player.RemoveInvItem(invListIndex, true);
+		} else if (result) {
+			// Item was transformed, check if size changed
+			const Size newSize = GetInventorySize(*pi);
 
-		// If the size changed, revalidate inventory fit
-		if (newSize.width != originalSize.width || newSize.height != originalSize.height) {
-			// Make a copy of the transformed item
-			Item itemCopy = *pi;
+			// If the size changed, revalidate inventory fit
+			if (newSize.width != originalSize.width || newSize.height != originalSize.height) {
+				// Make a copy of the transformed item
+				Item itemCopy = *pi;
 
-			// Remove the item from inventory (this clears grid and shifts items)
-			player.RemoveInvItem(invListIndex, false);
+				// Remove the item from inventory (this clears grid and shifts items)
+				player.RemoveInvItem(invListIndex, false);
 
-			// Try to place it back in inventory at any valid position
-			if (!AutoPlaceItemInInventory(player, itemCopy, &player == MyPlayer)) {
-				// No space in inventory, drop it on the ground
-				const int itemIndex = AllocateItem();
-				Items[itemIndex] = itemCopy;
-				GetSuperItemSpace(player.position.tile, itemIndex);
-				NetSendCmdPItem(false, CMD_SPAWNITEM, Items[itemIndex].position, Items[itemIndex]);
+				// Try to place it back in inventory at any valid position
+				if (!AutoPlaceItemInInventory(player, itemCopy, &player == MyPlayer)) {
+					// No space in inventory, drop it on the ground
+					const int itemIndex = AllocateItem();
+					Items[itemIndex] = itemCopy;
+					GetSuperItemSpace(player.position.tile, itemIndex);
+					NetSendCmdPItem(false, CMD_SPAWNITEM, Items[itemIndex].position, Items[itemIndex]);
 
-				if (&player == MyPlayer) {
-					player.Say(HeroSpeech::ICantCarryAnymore);
+					if (&player == MyPlayer) {
+						player.Say(HeroSpeech::ICantCarryAnymore);
+					}
 				}
 			}
 		}
@@ -3940,16 +3946,16 @@ void DoChaos(Player &player, int cii)
 	CalcPlrInv(player, true);
 }
 
-void ChaosItem(Item &item, const Player &player)
+bool ChaosItem(Item &item, const Player &player)
 {
 	// If the item is not a weapon, armor, or shield, do nothing
 	if (item._itype == ItemType::Misc || item._itype == ItemType::Staff || item._itype == ItemType::Gold || item._itype == ItemType::Ring || item._itype == ItemType::Amulet) {
-		return;
+		return false;
 	}
 
 	// If the item is not magic, do nothing
 	if (item._iMagical != ITEM_QUALITY_MAGIC) {
-		return;
+		return false;
 	}
 
 	// Get the item's type (Sword, Axe, Bow, etc.)
@@ -3965,7 +3971,15 @@ void ChaosItem(Item &item, const Player &player)
 	// If there are no valid uniques for this item type, do nothing
 	if (validUniques.empty()) {
 		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
-		return;
+		return false;
+	}
+
+	GenerateNewSeed(item);
+	// Have a 50/50 chance to instead destroy the item
+	if (GenerateRnd(100) < 50) {
+		item.clear();
+		PlaySfxLoc(SfxID::TriggerTrap, player.position.tile);
+		return false;
 	}
 
 	// Pick a random unique from the valid ones
@@ -3979,6 +3993,7 @@ void ChaosItem(Item &item, const Player &player)
 	item._iIdentified = true;
 
 	PlaySfxLoc(SfxID::SpellRepair, player.position.tile);
+	return true;
 }
 
 void DoRepair(Player &player, int cii)
