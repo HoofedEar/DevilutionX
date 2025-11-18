@@ -91,7 +91,6 @@ const char *const SoundToggleNames[] = {
 
 void GamemenuUpdateSingle()
 {
-	sgSingleMenu[1].setEnabled(false); // Save Game disabled
 	sgSingleMenu[2].setEnabled(gbValidSaveFile);
 
 	const bool enable = MyPlayer->_pmode != PM_DEATH && !MyPlayerIsDead;

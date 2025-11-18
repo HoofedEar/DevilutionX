@@ -3880,10 +3880,10 @@ void MonsterDeath(Monster &monster, Direction md, bool sendmsg)
 
 	SpawnLoot(monster, sendmsg);
 
-	// if (monster.type().type == MT_DIABLO)
-	// 	DiabloDeath(monster, true);
-	// else
-	PlayEffect(monster, MonsterSound::Death);
+	if (monster.type().type == MT_DIABLO)
+		DiabloDeath(monster, true);
+	else
+		PlayEffect(monster, MonsterSound::Death);
 
 	if (monster.mode != MonsterMode::Petrified) {
 		if (monster.type().type == MT_GOLEM)
@@ -3903,21 +3903,6 @@ void MonsterDeath(Monster &monster, Direction md, bool sendmsg)
 	M_FallenFear(monster.position.tile);
 	if (IsAnyOf(monster.type().type, MT_NACID, MT_RACID, MT_BACID, MT_XACID, MT_SPIDLORD))
 		AddMissile(monster.position.tile, { 0, 0 }, Direction::South, MissileID::AcidPuddle, TARGET_PLAYERS, monster, monster.intelligence + 1, 0);
-	if (monster.type().type == MT_DIABLO) {
-		PlaySFX(SfxID::DiabloDeath);
-		auto &quest = Quests[Q_DIABLO];
-		quest._qactive = QUEST_DONE;
-		if (sendmsg)
-			NetSendCmdQuest(true, quest);
-		InitDiabloMsg(EMSG_SAVING);
-		RedrawEverything();
-		DrawAndBlit();
-		const uint32_t currentTime = SDL_GetTicks();
-		SaveGame();
-		ClrDiabloMsg();
-		InitDiabloMsg(EMSG_GAME_SAVED, currentTime + 1000 - SDL_GetTicks());
-		RedrawEverything();
-	}
 }
 
 void StartMonsterDeath(Monster &monster, const Player &player, bool sendmsg)
