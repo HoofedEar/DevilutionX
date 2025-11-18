@@ -2799,6 +2799,17 @@ bool TryIconCurs()
 		return true;
 	}
 
+	if (pcurs == CURSOR_CHAOS) {
+		if (pcursinvitem != -1 && !IsInspectingPlayer())
+			DoChaos(myPlayer, pcursinvitem);
+		else if (pcursstashitem != StashStruct::EmptyCell) {
+			Item &item = Stash.stashList[pcursstashitem];
+			ChaosItem(item, myPlayer);
+		}
+		NewCursor(CURSOR_HAND);
+		return true;
+	}
+
 	if (pcurs == CURSOR_REPAIR) {
 		if (pcursinvitem != -1 && !IsInspectingPlayer())
 			DoRepair(myPlayer, pcursinvitem);

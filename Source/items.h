@@ -548,6 +548,8 @@ void GetItemStr(Item &item);
 void CheckIdentify(Player &player, int cii);
 void DoAugment(Player &player, int cii);
 void AugmentItem(Item &item, const Player &player);
+void DoChaos(Player &player, int cii);
+void ChaosItem(Item &item, const Player &player);
 void DoRepair(Player &player, int cii);
 void DoRecharge(Player &player, int cii);
 bool DoOil(Player &player, int cii);
