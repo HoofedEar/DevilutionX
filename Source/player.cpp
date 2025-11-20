@@ -24,6 +24,7 @@
 #ifdef _DEBUG
 #include "debug.h"
 #endif
+#include "DiabloUI/diabloui.h"
 #include "engine/backbuffer_state.hpp"
 #include "engine/load_cl2.hpp"
 #include "engine/load_file.hpp"
@@ -41,12 +42,14 @@
 #include "levels/trigs.h"
 #include "lighting.h"
 #include "loadsave.h"
+#include "menu.h"
 #include "minitext.h"
 #include "missiles.h"
 #include "monster.h"
 #include "nthread.h"
 #include "objects.h"
 #include "options.h"
+#include "pfile.h"
 #include "player.h"
 #include "qol/autopickup.h"
 #include "qol/floatingnumbers.h"
@@ -2692,6 +2695,12 @@ StartPlayerKill(Player &player, DeathReason deathReason)
 	if (&player == MyPlayer) {
 		NetSendCmdParam1(true, CMD_PLRDEAD, static_cast<uint16_t>(deathReason));
 		gamemenu_off();
+
+		// Delete save file on death (hardcore mode)
+		_uiheroinfo heroInfo = {};
+		heroInfo.saveNumber = gSaveNumber;
+		pfile_delete_save(&heroInfo);
+		gbValidSaveFile = false;
 	}
 
 	const bool dropGold = !gbIsMultiplayer || !(player.isOnLevel(16) || player.isOnArenaLevel());
