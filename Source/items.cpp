@@ -3955,8 +3955,8 @@ bool ChaosItem(Item &item, const Player &player)
 		return false;
 	}
 
-	// If the item is not magic, do nothing
-	if (item._iMagical != ITEM_QUALITY_MAGIC) {
+	// If the item is not normal, do nothing
+	if (item._iMagical != ITEM_QUALITY_NORMAL) {
 		return false;
 	}
 
@@ -3977,8 +3977,7 @@ bool ChaosItem(Item &item, const Player &player)
 	}
 
 	GenerateNewSeed(item);
-	// Have a 50/50 chance to instead destroy the item
-	if (GenerateRnd(100) < 50) {
+	if (GenerateRnd(100) < 60) {
 		item.clear();
 		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
 		return false;
