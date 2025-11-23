@@ -2541,9 +2541,9 @@ void CalcPlrPrimaryStats(Player &player, int strength, int &magic, int dexterity
 	const uint8_t playerLevel = player.getCharacterLevel();
 
 	if (HasAnyOf(player._pSpellFlags, SpellFlag::RageActive)) {
-		strength += 2 * playerLevel;
+		strength += 4 * playerLevel;
 		dexterity += playerLevel + playerLevel / 2;
-		vitality += 2 * playerLevel;
+		vitality += 4 * playerLevel;
 	}
 	if (HasAnyOf(player._pSpellFlags, SpellFlag::RageCooldown)) {
 		strength -= 2 * playerLevel;
