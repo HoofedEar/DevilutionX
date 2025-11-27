@@ -1433,7 +1433,7 @@ void StartBarmaid()
 	AddSText(0, 2, _("Gillian"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
 	AddSText(0, 9, _("Would you like to:"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
 	AddSText(0, 12, _("Talk to Gillian"), UiFlags::ColorBlue | UiFlags::AlignCenter, true);
-	AddSText(0, 14, _("Access Storage"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+	// AddSText(0, 14, _("Access Storage"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 	AddSText(0, 18, _("Say goodbye"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 	AddSLine(5);
 	CurrentItemIndex = 20;
@@ -2257,15 +2257,15 @@ void BarmaidEnter()
 		StartStore(TalkID::Gossip);
 		break;
 	case 14:
-		ActiveStore = TalkID::None;
-		IsStashOpen = true;
-		Stash.RefreshItemStatFlags();
-		invflag = true;
-		if (ControlMode != ControlTypes::KeyboardAndMouse) {
-			if (pcurs == CURSOR_DISARM)
-				NewCursor(CURSOR_HAND);
-			FocusOnInventory();
-		}
+		// ActiveStore = TalkID::None;
+		// IsStashOpen = true;
+		// Stash.RefreshItemStatFlags();
+		// invflag = true;
+		// if (ControlMode != ControlTypes::KeyboardAndMouse) {
+		// 	if (pcurs == CURSOR_DISARM)
+		// 		NewCursor(CURSOR_HAND);
+		// 	FocusOnInventory();
+		// }
 		break;
 	case 18:
 		ActiveStore = TalkID::None;
