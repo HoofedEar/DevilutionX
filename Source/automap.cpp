@@ -1537,7 +1537,7 @@ std::unique_ptr<AutomapTile[]> LoadAutomapData(size_t &tileCount)
 } // namespace
 
 bool AutomapActive;
-AutomapType CurrentAutomapType = AutomapType::Opaque;
+AutomapType CurrentAutomapType = AutomapType::Minimap;
 uint8_t AutomapView[DMAXX][DMAXY];
 int AutoMapScale;
 int MinimapScale;
@@ -1694,6 +1694,13 @@ void StartAutomap()
 {
 	AutomapOffset = { 0, 0 };
 	AutomapActive = true;
+}
+
+void StartMinimap()
+{
+	AutomapOffset = { 0, 0 };
+	AutomapActive = true;
+	SetAutomapType(AutomapType::Minimap);
 }
 
 void AutomapUp()
