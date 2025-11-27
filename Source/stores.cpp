@@ -1052,8 +1052,8 @@ void StartWitchTranscribeScrolls()
 
 		RenderGold = true;
 		AddSText(20, 1, _("You don't have enough scrolls."), UiFlags::ColorWhitegold, false);
-		AddSText(20, 3, _("Bring me at least 3 scrolls of the same spell."), UiFlags::ColorWhitegold, false);
-		AddSLine(5);
+		// AddSText(20, 3, _("Bring me at least 3 scrolls of the same spell."), UiFlags::ColorWhitegold, false);
+		AddSLine(3);
 		AddItemListBackButton(/*selectable=*/true);
 		return;
 	}
