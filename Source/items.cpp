@@ -4701,6 +4701,10 @@ void SpawnWitch(int lvl)
 		item._iCreateInfo = lvl | CF_WITCH;
 		item._iIdentified = true;
 
+		// Don't sell orbs
+		if (item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS)
+			continue;
+
 		WitchItems.push_back(item);
 	}
 
@@ -4846,6 +4850,10 @@ void SpawnHealer(int lvl)
 			item._iCreateInfo = lvl | CF_HEALER;
 			item._iIdentified = true;
 		}
+
+		// Don't sell orbs
+		if (item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS)
+			continue;
 
 		HealerItems.push_back(item);
 	}
