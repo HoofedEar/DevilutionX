@@ -1156,9 +1156,11 @@ void InvDrawSlotBack(const Surface &out, Point targetPosition, Size size, item_q
 bool CanBePlacedOnBelt(const Player &player, const Item &item)
 {
 	return FitsInBeltSlot(item)
-	    && item._itype != ItemType::Gold
-	    && player.CanUseItem(item)
-	    && item.isUsable();
+		&& item._itype != ItemType::Gold
+		&& item._iMiscId != IMISC_ORBAUGMENT
+		&& item._iMiscId != IMISC_ORBCHAOS
+		&& player.CanUseItem(item)
+		&& item.isUsable();
 }
 
 void FreeInvGFX()
