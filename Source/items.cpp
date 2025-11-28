@@ -3857,6 +3857,7 @@ void CheckIdentify(Player &player, int cii)
 void DoAugment(Player &player, int cii)
 {
 	Item *pi;
+	bool isEquipped = (cii < NUM_INVLOC);
 
 	if (cii >= NUM_INVLOC)
 		pi = &player.InvList[cii - NUM_INVLOC];
@@ -3865,6 +3866,11 @@ void DoAugment(Player &player, int cii)
 
 	AugmentItem(*pi, player);
 	CalcPlrInv(player, true);
+
+	// If the item was equipped, send network message to properly sync the stat changes
+	if (isEquipped && &player == MyPlayer) {
+		NetSendCmdChItem(false, static_cast<uint8_t>(cii));
+	}
 }
 
 void AugmentItem(Item &item, const Player &player)
@@ -3946,6 +3952,11 @@ void DoChaos(Player &player, int cii)
 	}
 
 	CalcPlrInv(player, true);
+
+	// If the item was equipped, send network message to properly sync the stat changes
+	if (!isInInventory && &player == MyPlayer) {
+		NetSendCmdChItem(false, static_cast<uint8_t>(cii));
+	}
 }
 
 bool ChaosItem(Item &item, const Player &player)
