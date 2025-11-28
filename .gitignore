@@ -468,3 +468,6 @@ uwp-project/Assets/ui_art
 
 # Temporary directory for prep scripts and other purposes.
 /tmp/
+ExHeavy.TTF
+ExLight.TTF
+.gitignore

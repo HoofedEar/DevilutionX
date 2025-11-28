@@ -111,7 +111,7 @@ const std::string &PrefPath()
 #elif defined(NXDK)
 		prefPath = NxdkGetPrefPath();
 #else
-		prefPath = FromSDL(SDL_GetPrefPath("hoofedear", "diablohx"));
+		prefPath = FromSDL(SDL_GetPrefPath("hoofedear", "diavarice"));
 #if !defined(__amigaos__) && !defined(__DJGPP__)
 		if (FileExistsAndIsWriteable("diablo.ini")) {
 			prefPath = std::string();
@@ -132,7 +132,7 @@ const std::string &ConfigPath()
 #elif defined(NXDK)
 		configPath = NxdkGetPrefPath();
 #else
-		configPath = FromSDL(SDL_GetPrefPath("hoofedear", "diablohx"));
+		configPath = FromSDL(SDL_GetPrefPath("hoofedear", "diavarice"));
 #if !defined(__amigaos__) && !defined(__DJGPP__)
 		if (FileExistsAndIsWriteable("diablo.ini")) {
 			configPath = std::string();

@@ -56,27 +56,19 @@ endif()
 
 if(NOT VERSION_SUFFIX)
   # For versions with a suffix, e.g. "1.5.0-dev", include
-  # the build type and the git hash.
+  # the build type.
   set(VERSION_SUFFIX "-$<CONFIG>")
-  if(VERSION_PREFIX MATCHES "-")
-    if(NOT GIT_COMMIT_HASH)
-      include(functions/git)
-      get_git_commit_hash(GIT_COMMIT_HASH)
-    endif()
-    if(GIT_COMMIT_HASH)
-      set(VERSION_SUFFIX "${VERSION_SUFFIX}-${GIT_COMMIT_HASH}")
-    endif()
-  else()
+  if(NOT VERSION_PREFIX MATCHES "-")
     # For versions without a suffix, e.g. "1.5.0" rather than "1.5.0-dev",
     # only include the build type if it is a debug build.
     set(VERSION_SUFFIX "$<$<CONFIG:Debug>:$<CONFIG>>")
   endif()
 endif()
 
-project(DiabloHX
+project(DiAvarice
   VERSION ${VERSION_NUM}
   LANGUAGES C CXX)
-set(PROJECT_VERSION_WITH_SUFFIX "${VERSION_PREFIX}${VERSION_SUFFIX}")
+set(PROJECT_VERSION_WITH_SUFFIX "")
 
 # Platform definitions can override options and we want `cmake_dependent_option` to see the effects.
 # Note that a few options are still defined before this because they're needed by `VcPkgManifestFeatures.cmake`.
