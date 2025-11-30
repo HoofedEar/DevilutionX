@@ -267,4 +267,18 @@ void UnloadFonts();
 /** @brief Whether this character can be substituted by a newline when word-wrapping. */
 bool IsBreakableWhitespace(char32_t c);
 
+/**
+ * @brief Export a font to a PNG image file with A-Z, a-z, 0-9, +, -, % characters.
+ * @param fontSize The font size to export
+ * @param color The text color to use
+ * @param outputPath Path to the output PNG file
+ */
+void ExportFontToImage(GameFontTables fontSize, text_color color, const char *outputPath);
+
+/**
+ * @brief Export all font sizes in all common colors to PNG files.
+ * Creates files like font_12_white.png, font_12_blue.png, font_24_gold.png, etc.
+ */
+void ExportAllFonts();
+
 } // namespace devilution

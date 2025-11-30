@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -23,6 +24,7 @@
 #include "engine/load_clx.hpp"
 #include "engine/load_file.hpp"
 #include "engine/load_pcx.hpp"
+#include "engine/palette.h"
 #include "engine/point.hpp"
 #include "engine/rectangle.hpp"
 #include "engine/render/clx_render.hpp"
@@ -35,6 +37,7 @@
 #include "utils/language.h"
 #include "utils/log.hpp"
 #include "utils/str_cat.hpp"
+#include "utils/surface_to_png.hpp"
 #include "utils/utf8.hpp"
 
 namespace devilution {
@@ -927,6 +930,142 @@ uint8_t PentSpn2Spin()
 bool IsBreakableWhitespace(char32_t c)
 {
 	return IsAnyOf(c, U' ', U'　', ZWSP);
+}
+
+void ExportFontToImage(GameFontTables fontSize, text_color color, const char *outputPath)
+{
+	// Define the characters to export: A-Z, a-z, 0-9, +, -, %
+	const char *characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-%";
+	const int numChars = 65;
+
+	// Load the font (Unicode row 0 for ASCII characters)
+	FontStack font = LoadFont(fontSize, color, 0);
+	if (!font.has_value()) {
+		LogError("ExportFontToImage: Failed to load font size {}", static_cast<int>(fontSize));
+		return;
+	}
+
+	// Calculate total width needed and max height
+	int totalWidth = 0;
+	int maxHeight = 0;
+	for (int i = 0; i < numChars; i++) {
+		uint8_t frame = static_cast<uint8_t>(characters[i]);
+		ClxSprite glyph = font.glyph(frame);
+		totalWidth += glyph.width() + 2; // +2 pixels spacing between characters
+		if (glyph.height() > maxHeight) {
+			maxHeight = glyph.height();
+		}
+	}
+
+	// Remove trailing spacing
+	if (totalWidth > 0) totalWidth -= 2;
+
+	Log("ExportFontToImage: Creating image {}x{} for {} characters", totalWidth, maxHeight, numChars);
+
+	// Create a surface to draw on
+	OwnedSurface surface(totalWidth, maxHeight);
+	if (surface.surface == nullptr) {
+		LogError("ExportFontToImage: Failed to create surface");
+		return;
+	}
+
+	// Clear the surface to black (color index 0)
+	SDL_FillRect(surface.surface, nullptr, 0);
+
+	// Set up the palette - copy from system palette
+	if (surface.surface->format->palette != nullptr) {
+		SDL_SetPaletteColors(surface.surface->format->palette,
+		    system_palette.data(), 0, 256);
+	}
+
+	// Render each character
+	int xPos = 0;
+	for (int i = 0; i < numChars; i++) {
+		uint8_t frame = static_cast<uint8_t>(characters[i]);
+		ClxSprite glyph = font.glyph(frame);
+
+		// DrawFont expects position.y at the top of the sprite
+		Point pos = { xPos, 0 };
+		DrawFont(surface, pos, glyph, color, false);
+
+		xPos += glyph.width() + 2;
+	}
+
+	// Save as PNG
+#ifdef USE_SDL3
+	SDL_IOStream *file = SDL_IOFromFile(outputPath, "wb");
+#else
+	SDL_RWops *file = SDL_RWFromFile(outputPath, "wb");
+#endif
+	if (file == nullptr) {
+		LogError("ExportFontToImage: Failed to open output file: {}", outputPath);
+		return;
+	}
+
+	auto result = WriteSurfaceToFilePng(surface, file);
+	if (!result.has_value()) {
+		LogError("ExportFontToImage: Failed to write PNG: {}", result.error());
+	} else {
+		Log("ExportFontToImage: Successfully exported font to {}", outputPath);
+	}
+}
+
+const char *GetColorName(text_color color)
+{
+	switch (color) {
+	case ColorUiGold: return "ui_gold";
+	case ColorUiSilver: return "ui_silver";
+	case ColorUiGoldDark: return "ui_gold_dark";
+	case ColorUiSilverDark: return "ui_silver_dark";
+	case ColorDialogWhite: return "dialog_white";
+	case ColorDialogRed: return "dialog_red";
+	case ColorYellow: return "yellow";
+	case ColorGold: return "gold";
+	case ColorBlack: return "black";
+	case ColorWhite: return "white";
+	case ColorWhitegold: return "whitegold";
+	case ColorRed: return "red";
+	case ColorBlue: return "blue";
+	case ColorOrange: return "orange";
+	case ColorButtonface: return "buttonface";
+	case ColorButtonpushed: return "buttonpushed";
+	case ColorInGameDialogWhite: return "ingame_dialog_white";
+	case ColorInGameDialogYellow: return "ingame_dialog_yellow";
+	case ColorInGameDialogRed: return "ingame_dialog_red";
+	default: return "unknown";
+	}
+}
+
+void ExportAllFonts()
+{
+	Log("Exporting all fonts in all colors...");
+
+	const GameFontTables fontSizes[] = { GameFont12, GameFont24, GameFont30, GameFont42, GameFont46, FontSizeDialog };
+	const int fontSizeValues[] = { 12, 24, 30, 42, 46, 22 };
+
+	// Common colors used in the game
+	const text_color colors[] = {
+		ColorWhite,      // Normal items
+		ColorBlue,       // Magic items
+		ColorGold,       // Unique items
+		ColorOrange,     // Orange (set items in some mods)
+		ColorRed,        // Red text
+		ColorYellow,     // Yellow text
+		ColorDialogWhite,
+		ColorWhitegold,
+		ColorUiGold,
+		ColorUiSilver
+	};
+
+	for (int i = 0; i < 6; i++) {
+		for (text_color color : colors) {
+			char filename[64];
+			snprintf(filename, sizeof(filename), "font_%d_%s.png", fontSizeValues[i], GetColorName(color));
+			ExportFontToImage(fontSizes[i], color, filename);
+		}
+	}
+
+	Log("Font export complete!");
 }
 
 } // namespace devilution

@@ -52,6 +52,7 @@
 #include "engine/load_file.hpp"
 #include "engine/random.hpp"
 #include "engine/render/clx_render.hpp"
+#include "engine/render/text_render.hpp"
 #include "engine/sound.h"
 #include "game_mode.hpp"
 #include "gamemenu.h"
@@ -2740,6 +2741,10 @@ int DiabloMain(int argc, char **argv)
 	onInitialized();
 #endif
 	if (!demo::IsRunning()) SaveOptions();
+
+	// Export all fonts to PNG files for reference
+	// UiLoadDefaultPalette(); // Ensure palette is loaded
+	// ExportAllFonts();
 
 	DiabloSplash();
 	mainmenu_loop();
