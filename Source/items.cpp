@@ -3983,14 +3983,13 @@ bool ChaosItem(Item &item, const Player &player)
 
 	// If there are no valid uniques for this item type, do nothing
 	if (validUniques.empty()) {
-		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
 		return false;
 	}
 
 	GenerateNewSeed(item);
 	if (GenerateRnd(100) < 60) {
 		item.clear();
-		PlaySfxLoc(SfxID::SpellEnd, player.position.tile);
+		PlaySfxLoc(SfxID::BarrelBreak, player.position.tile);
 		return false;
 	}
 
