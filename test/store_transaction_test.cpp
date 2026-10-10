@@ -69,7 +69,7 @@ void OpenVendor(TalkID vendor)
  *
  * The line numbers are fixed by the Start*() functions:
  *   Smith:  12=Buy, 14=Premium, 16=Sell, 18=Repair, 20=Leave
- *   Witch:  12=Talk, 14=Buy, 16=Sell, 18=Recharge, 20=Leave
+ *   Witch:  10=Talk, 12=Buy, 14=Sell, 16=Recharge, 18=Transcribe, 20=Leave
  *   Healer: 12=Talk, 14=Buy, 18=Leave
  *   Storyteller: 12=Talk, 14=Identify, 18=Leave
  *   Boy:    18=What have you got? (if item exists)

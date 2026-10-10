@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -31,6 +32,7 @@
 #include "panels/quest_log.hpp"
 #include "qol/stash.h"
 #include "qol/visual_store.h"
+#include "spells.h"
 #include "tables/townerdat.hpp"
 #include "towners.h"
 #include "utils/format.hpp"
@@ -209,6 +211,37 @@ const char *const TownerNames[] = {
 	N_("Adria"),
 	N_("Gillian"),
 	N_("Wirt"),
+};
+
+// Mapping for scroll spell -> price
+static const std::unordered_map<SpellID, int> ScrollPricesBySpell = {
+	{ SpellID::Firebolt, 1000 },
+	{ SpellID::Healing, 1000 },
+	{ SpellID::Lightning, 3000 },
+	{ SpellID::Flash, 7500 },
+	{ SpellID::FireWall, 6000 },
+	{ SpellID::TownPortal, 3000 },
+	{ SpellID::StoneCurse, 12000 },
+	{ SpellID::Phasing, 3500 },
+	{ SpellID::ManaShield, 16000 },
+	{ SpellID::Fireball, 8000 },
+	{ SpellID::Guardian, 14000 },
+	{ SpellID::ChainLightning, 11000 },
+	{ SpellID::FlameWave, 1000 },
+	{ SpellID::Nova, 21000 },
+	{ SpellID::Inferno, 2000 },
+	{ SpellID::Golem, 18000 },
+	{ SpellID::Teleport, 20000 },
+	{ SpellID::Apocalypse, 300000 },
+	{ SpellID::Etherealize, 26000 },
+	{ SpellID::Elemental, 10500},
+	{ SpellID::ChargedBolt, 1000 },
+	{ SpellID::HolyBolt, 1000 },
+	{ SpellID::Resurrect, 4000 },
+	{ SpellID::Telekinesis, 2500 },
+	{ SpellID::HealOther, 1000 },
+	{ SpellID::BloodStar, 27500 },
+	{ SpellID::BoneSpirit, 11500 },
 };
 
 constexpr int PaddingTop = 32;
@@ -427,6 +460,27 @@ void ScrollVendorStore(std::span<Item> itemData, int storeLimit, int idx, int se
 	} else {
 		NumTextLines = std::max(storeLimit - 4, 0);
 	}
+}
+
+void ScrollVendorStoreCustomPrice(Item *itemData, int storeLimit, int idx)
+{
+	ClearSText(5, 21);
+	PreviousScrollPos = 5;
+
+	for (int l = 5; l < 20 && idx < storeLimit; l += 4) {
+		const Item &item = itemData[idx];
+		if (!item.isEmpty()) {
+			const UiFlags itemColor = item.getTextColorWithStatCheck();
+			AddSText(20, l, item.getName(), itemColor, true, item._iCurs, true);
+			AddSTextVal(l, ScrollPricesBySpell.at(item._iSpell)); // Use custom price
+			PrintStoreItem(item, l + 1, itemColor, true);
+			NextScrollPos = l;
+		} else {
+			l -= 4;
+		}
+		idx++;
+	}
+	NumTextLines = std::max(static_cast<int>(storeLimit) - 4, 0);
 }
 
 void StartSmith()
@@ -692,21 +746,24 @@ void StartWitch()
 	IsTextFullSize = false;
 	HasScrollbar = false;
 	AddSText(0, 2, _("Witch's shack"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
-	AddSText(0, 9, _("Would you like to:"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
-	AddSText(0, 12, _("Talk to Adria"), UiFlags::ColorBlue | UiFlags::AlignCenter, true);
 	if (*GetOptions().Gameplay.storeUi == StoreUi::VisualGrid) {
+		AddSText(0, 9, _("Would you like to:"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
+		AddSText(0, 12, _("Talk to Adria"), UiFlags::ColorBlue | UiFlags::AlignCenter, true);
 		AddSText(0, 14, _("Buy / Sell"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 		AddSText(0, 16, _("Recharge staves"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-		AddSText(0, 18, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-		AddSLine(4);
+		AddSText(0, 18, _("Transcribe scrolls"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+		AddSText(0, 20, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+		AddSLine(5);
 	} else {
-		AddSText(0, 14, _("Buy items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-		AddSText(0, 16, _("Sell items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
-		AddSText(0, 18, _("Recharge staves"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+		AddSText(0, 7, _("Would you like to:"), UiFlags::ColorWhitegold | UiFlags::AlignCenter, false);
+		AddSText(0, 10, _("Talk to Adria"), UiFlags::ColorBlue | UiFlags::AlignCenter, true);
+		AddSText(0, 12, _("Buy items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+		AddSText(0, 14, _("Sell items"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+		AddSText(0, 16, _("Recharge staves"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
+		AddSText(0, 18, _("Transcribe scrolls"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 		AddSText(0, 20, _("Leave the shack"), UiFlags::ColorWhite | UiFlags::AlignCenter, true);
 		AddSLine(5);
 	}
-
 	CurrentItemIndex = 20;
 }
 
@@ -906,6 +963,127 @@ void StartWitchRecharge()
 	AddItemListBackButton();
 }
 
+void ScrollWitchTranscribeScrolls(int idx)
+{
+	ScrollVendorStoreCustomPrice(PlayerItems, CurrentItemIndex, idx);
+}
+
+void StartWitchTranscribeScrolls()
+{
+	IsTextFullSize = true;
+	bool hasScrollsToTranscribe = false;
+	CurrentItemIndex = 0;
+
+	for (auto &item : PlayerItems) {
+		item.clear();
+	}
+
+	const Player &myPlayer = *MyPlayer;
+
+	// Count scrolls by spell
+	int scrollCounts[static_cast<int>(SpellID::LAST) + 1] = {};
+	Item *firstScrollOfSpell[static_cast<int>(SpellID::LAST) + 1] = {};
+
+	// Scan inventory for scrolls
+	for (int i = 0; i < myPlayer._pNumInv; i++) {
+		const Item &item = myPlayer.InvList[i];
+		if (item.isScroll()) {
+			int spellIdx = static_cast<int>(item._iSpell);
+			if (spellIdx >= 0 && spellIdx <= static_cast<int>(SpellID::LAST)) {
+				scrollCounts[spellIdx]++;
+				if (firstScrollOfSpell[spellIdx] == nullptr) {
+					firstScrollOfSpell[spellIdx] = const_cast<Item *>(&item);
+				}
+			}
+		}
+	}
+
+	// Scan belt for scrolls
+	for (int i = 0; i < MaxBeltItems; i++) {
+		const Item &item = myPlayer.SpdList[i];
+		if (!item.isEmpty() && item.isScroll()) {
+			int spellIdx = static_cast<int>(item._iSpell);
+			if (spellIdx >= 0 && spellIdx <= static_cast<int>(SpellID::LAST)) {
+				scrollCounts[spellIdx]++;
+				if (firstScrollOfSpell[spellIdx] == nullptr) {
+					firstScrollOfSpell[spellIdx] = const_cast<Item *>(&myPlayer.SpdList[i]);
+				}
+			}
+		}
+	}
+
+	// Create entries for spells with 3+ scrolls that have book versions
+	for (int spellIdx = 0; spellIdx <= static_cast<int>(SpellID::LAST); spellIdx++) {
+		if (scrollCounts[spellIdx] >= 3 && firstScrollOfSpell[spellIdx] != nullptr) {
+			// Check if this spell has a book version
+			const SpellID spell = static_cast<SpellID>(spellIdx);
+			if (GetSpellBookLevel(spell) == -1) {
+				continue; // This spell has no book version, skip it
+			}
+
+			if (CurrentItemIndex >= 48)
+				break;
+
+			hasScrollsToTranscribe = true;
+			// Create a book item for display (showing what the player will receive)
+			Item bookItem = *firstScrollOfSpell[spellIdx];
+
+			// Convert scroll to book for display
+			bookItem._iMiscId = IMISC_BOOK;
+			bookItem._itype = ItemType::Misc;
+
+			// Update name to "Book of X" instead of "Scroll of X"
+			const std::string_view spellName = GetSpellData(spell).sNameText;
+			CopyUtf8(bookItem._iName, _("Book of "), ItemNameLength);
+			CopyUtf8(bookItem._iName + std::string_view(bookItem._iName).size(), spellName, ItemNameLength - std::string_view(bookItem._iName).size());
+			CopyUtf8(bookItem._iIName, bookItem._iName, ItemNameLength);
+
+			// Set book properties
+			const SpellData &spellData = GetSpellData(spell);
+			bookItem._iMinMag = spellData.minInt;
+			bookItem._ivalue = bookItem._iIvalue = spellData.bookCost();
+
+			// Set book cursor color based on spell type
+			switch (spellData.type()) {
+			case MagicType::Fire:
+				bookItem._iCurs = ICURS_BOOK_RED;
+				break;
+			case MagicType::Lightning:
+				bookItem._iCurs = ICURS_BOOK_BLUE;
+				break;
+			case MagicType::Magic:
+				bookItem._iCurs = ICURS_BOOK_GREY;
+				break;
+			}
+
+			PlayerItems[CurrentItemIndex] = bookItem;
+			PlayerItemIndexes[CurrentItemIndex] = scrollCounts[spellIdx]; // Store count in the index
+			CurrentItemIndex++;
+		}
+	}
+
+	if (!hasScrollsToTranscribe) {
+		HasScrollbar = false;
+
+		RenderGold = true;
+		AddSText(20, 1, _("You don't have enough scrolls."), UiFlags::ColorWhitegold, false);
+		// AddSText(20, 3, _("Bring me at least 3 scrolls of the same spell."), UiFlags::ColorWhitegold, false);
+		AddSLine(3);
+		AddItemListBackButton(/*selectable=*/true);
+		return;
+	}
+
+	HasScrollbar = true;
+	ScrollPos = 0;
+	NumTextLines = CurrentItemIndex;
+
+	RenderGold = true;
+	AddSText(20, 1, _("Which scrolls do you want transcribed?"), UiFlags::ColorWhitegold, false);
+	AddSLine(3);
+	ScrollWitchTranscribeScrolls(ScrollPos);
+	AddItemListBackButton();
+}
+
 void StoreNoMoney()
 {
 	StartStore(OldActiveStore);
@@ -932,7 +1110,11 @@ void StoreConfirm(Item &item)
 
 	const UiFlags itemColor = item.getTextColorWithStatCheck();
 	AddSText(20, 8, item.getName(), itemColor, false);
-	AddSTextVal(8, item._iIvalue);
+	if (OldActiveStore == TalkID::WitchTranscribeScrolls) {
+		AddSTextVal(8, ScrollPricesBySpell.at(item._iSpell));
+	} else {
+		AddSTextVal(8, item._iIvalue);
+	}
 	PrintStoreItem(item, 9, itemColor);
 
 	std::string_view prompt;
@@ -952,6 +1134,9 @@ void StoreConfirm(Item &item)
 		break;
 	case TalkID::WitchRecharge:
 		prompt = _("Are you sure you want to recharge this item?");
+		break;
+	case TalkID::WitchTranscribeScrolls:
+		prompt = _("Transcribe 3 scrolls into a book?");
 		break;
 	case TalkID::SmithSell:
 	case TalkID::WitchSell:
@@ -1546,6 +1731,9 @@ void WitchEnter()
 			StartStore(TalkID::WitchRecharge);
 			break;
 		case 18:
+			StartStore(TalkID::WitchTranscribeScrolls);
+			break;
+		case 20:
 			ActiveStore = TalkID::None;
 			break;
 		}
@@ -1553,20 +1741,23 @@ void WitchEnter()
 	}
 
 	switch (CurrentTextLine) {
-	case 12:
-		OldTextLine = 12;
+	case 10:
+		OldTextLine = 10;
 		TownerId = TOWN_WITCH;
 		OldActiveStore = TalkID::Witch;
 		StartStore(TalkID::Gossip);
 		break;
-	case 14:
+	case 12:
 		StartStore(TalkID::WitchBuy);
 		break;
-	case 16:
+	case 14:
 		StartStore(TalkID::WitchSell);
 		break;
-	case 18:
+	case 16:
 		StartStore(TalkID::WitchRecharge);
+		break;
+	case 18:
+		StartStore(TalkID::WitchTranscribeScrolls);
 		break;
 	case 20:
 		ActiveStore = TalkID::None;
@@ -1598,7 +1789,7 @@ void WitchBuyEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 14;
+		CurrentTextLine = 12;
 		return;
 	}
 
@@ -1626,7 +1817,7 @@ void WitchSellEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 16;
+		CurrentTextLine = 14;
 		return;
 	}
 
@@ -1672,11 +1863,116 @@ void WitchRechargeEnter()
 {
 	if (CurrentTextLine == BackButtonLine()) {
 		StartStore(TalkID::Witch);
-		CurrentTextLine = *GetOptions().Gameplay.storeUi == StoreUi::VisualGrid ? 16 : 18;
+		CurrentTextLine = 16;
 		return;
 	}
 
 	OldActiveStore = TalkID::WitchRecharge;
+	OldTextLine = CurrentTextLine;
+	OldScrollPos = ScrollPos;
+
+	const int idx = ScrollPos + ((CurrentTextLine - PreviousScrollPos) / 4);
+
+	if (!PlayerCanAfford(PlayerItems[idx]._iIvalue)) {
+		StartStore(TalkID::NoMoney);
+		return;
+	}
+
+	TempItem = PlayerItems[idx];
+	StartStore(TalkID::Confirm);
+}
+
+/**
+ * @brief Transcribes 3 scrolls into a book for the selected spell.
+ */
+void WitchTranscribeScrolls(int price)
+{
+	const int idx = OldScrollPos + ((OldTextLine - PreviousScrollPos) / 4);
+	const SpellID spellId = PlayerItems[idx]._iSpell;
+
+	Player &myPlayer = *MyPlayer;
+	int scrollsRemoved = 0;
+	const int scrollsNeeded = 3;
+	Item templateScroll;
+	bool foundTemplate = false;
+
+	// Remove 3 scrolls from inventory and save first as template
+	for (int i = myPlayer._pNumInv - 1; i >= 0 && scrollsRemoved < scrollsNeeded; i--) {
+		if (myPlayer.InvList[i].isScroll() && myPlayer.InvList[i]._iSpell == spellId) {
+			if (!foundTemplate) {
+				templateScroll = myPlayer.InvList[i];
+				foundTemplate = true;
+			}
+			myPlayer.RemoveInvItem(i, false);
+			scrollsRemoved++;
+		}
+	}
+
+	// Remove scrolls from belt if needed
+	for (int i = MaxBeltItems - 1; i >= 0 && scrollsRemoved < scrollsNeeded; i--) {
+		if (!myPlayer.SpdList[i].isEmpty() && myPlayer.SpdList[i].isScroll() && myPlayer.SpdList[i]._iSpell == spellId) {
+			if (!foundTemplate) {
+				templateScroll = myPlayer.SpdList[i];
+				foundTemplate = true;
+			}
+			myPlayer.RemoveSpdBarItem(i);
+			scrollsRemoved++;
+		}
+	}
+
+	// Create book from the scroll template
+	if (foundTemplate) {
+		Item bookItem = templateScroll;
+
+		// Convert scroll to book
+		bookItem._iMiscId = IMISC_BOOK;
+		bookItem._itype = ItemType::Misc;
+
+		// Update name to "Book of X" instead of "Scroll of X"
+		const std::string_view spellName = GetSpellData(spellId).sNameText;
+		CopyUtf8(bookItem._iName, _("Book of "), ItemNameLength);
+		CopyUtf8(bookItem._iName + std::string_view(bookItem._iName).size(), spellName, ItemNameLength - std::string_view(bookItem._iName).size());
+		CopyUtf8(bookItem._iIName, bookItem._iName, ItemNameLength);
+
+		// Set book properties
+		const SpellData &spellData = GetSpellData(spellId);
+		bookItem._iMinMag = spellData.minInt;
+		bookItem._ivalue = bookItem._iIvalue = spellData.bookCost();
+
+		// Set book cursor color based on spell type
+		switch (spellData.type()) {
+		case MagicType::Fire:
+			bookItem._iCurs = ICURS_BOOK_RED;
+			break;
+		case MagicType::Lightning:
+			bookItem._iCurs = ICURS_BOOK_BLUE;
+			break;
+		case MagicType::Magic:
+			bookItem._iCurs = ICURS_BOOK_GREY;
+			break;
+		}
+
+		// Try to place in inventory, drop to ground if full
+		if (!StoreAutoPlace(bookItem, true)) {
+			// Inventory is full, drop book at player's feet
+			const Point itemPosition = GetSuperItemLoc(myPlayer.position.tile);
+			PlaceItemInWorld(std::move(bookItem), itemPosition);
+		}
+	}
+
+	TakePlrsMoney(price);
+	CalcPlrInv(myPlayer, true);
+}
+
+void WitchTranscribeScrollsEnter()
+{
+	if (CurrentTextLine == BackButtonLine()) {
+		StartStore(TalkID::Witch);
+		CurrentTextLine = 18;
+		return;
+	}
+
+	OldActiveStore = TalkID::WitchTranscribeScrolls;
 	OldTextLine = CurrentTextLine;
 	OldScrollPos = ScrollPos;
 
@@ -1841,6 +2137,9 @@ void ConfirmEnter(Item &item)
 			break;
 		case TalkID::WitchRecharge:
 			WitchRechargeItem(item._iIvalue);
+			break;
+		case TalkID::WitchTranscribeScrolls:
+			WitchTranscribeScrolls(ScrollPricesBySpell.at(item._iSpell));
 			break;
 		case TalkID::BoyBuy:
 			BoyBuyItem(BoyItem, item._iIvalue);
@@ -2336,6 +2635,9 @@ void StartStore(TalkID s)
 	case TalkID::WitchRecharge:
 		StartWitchRecharge();
 		break;
+	case TalkID::WitchTranscribeScrolls:
+		StartWitchTranscribeScrolls();
+		break;
 	case TalkID::NoMoney:
 		StoreNoMoney();
 		break;
@@ -2521,15 +2823,19 @@ void StoreESC()
 		break;
 	case TalkID::WitchBuy:
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 14;
+		CurrentTextLine = 12;
 		break;
 	case TalkID::WitchSell:
 		StartStore(TalkID::Witch);
-		CurrentTextLine = 16;
+		CurrentTextLine = 14;
 		break;
 	case TalkID::WitchRecharge:
 		StartStore(TalkID::Witch);
-		CurrentTextLine = *GetOptions().Gameplay.storeUi == StoreUi::VisualGrid ? 16 : 18;
+		CurrentTextLine = 16;
+		break;
+	case TalkID::WitchTranscribeScrolls:
+		StartStore(TalkID::Witch);
+		CurrentTextLine = 18;
 		break;
 	case TalkID::HealerBuy:
 		StartStore(TalkID::Healer);
@@ -2724,6 +3030,9 @@ void StoreEnter()
 		break;
 	case TalkID::WitchRecharge:
 		WitchRechargeEnter();
+		break;
+	case TalkID::WitchTranscribeScrolls:
+		WitchTranscribeScrollsEnter();
 		break;
 	case TalkID::NoMoney:
 	case TalkID::NoRoom:
