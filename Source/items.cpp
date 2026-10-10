@@ -107,7 +107,7 @@ int MaxGold = GOLD_MAX_LIMIT;
 int8_t ItemCAnimTbl[] = {
 	20, 16, 16, 16, 4, 4, 4, 12, 12, 12,
 	12, 12, 12, 12, 12, 21, 21, 25, 12, 28,
-	28, 28, 38, 38, 38, 32, 38, 38, 38, 24,
+	28, 28, 12, 38, 38, 32, 12, 38, 38, 24,
 	24, 26, 2, 25, 22, 23, 24, 21, 27, 27,
 	29, 0, 0, 0, 12, 12, 12, 12, 12, 0,
 	8, 8, 0, 8, 8, 8, 8, 8, 8, 6,
@@ -1427,6 +1427,25 @@ std::vector<uint8_t> GetValidUniques(int lvl, unique_base_item baseItemId)
 	return validUniques;
 }
 
+std::vector<uint8_t> GetValidUniquesByType(int lvl, ItemType itemType)
+{
+	std::vector<uint8_t> validUniques;
+	int index = 0;
+	for (const UniqueItem &itemData : UniqueItems) {
+		// Find the base item's type
+		const unique_base_item baseItemId = itemData.UIItemId;
+		// Search through AllItemsList to find the ItemType for this base item
+		for (const ItemData &baseItem : AllItemsList) {
+			if (baseItem.iItemId == baseItemId && baseItem.itype == itemType && lvl >= itemData.UIMinLvl) {
+				validUniques.push_back(index);
+				break; // Found a match, move to next unique
+			}
+		}
+		index++;
+	}
+	return validUniques;
+}
+
 _unique_items CheckUnique(Item &item, int lvl, int uper, int uidOffset = 0)
 {
 	if (GenerateRnd(100) > uper)
@@ -1763,6 +1782,8 @@ void printItemMiscKBM(const Item &item, const bool isOil, const bool isCastOnTar
 {
 	if (item._iMiscId == IMISC_MAPOFDOOM) {
 		AddItemInfoBoxString(_("Right-click to view"));
+	} else if (item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS) {
+		AddItemInfoBoxString(_("Right-click to use, then\nleft-click to target"));
 	} else if (isOil) {
 		PrintItemOil(item._iMiscId);
 		AddItemInfoBoxString(_("Right-click to use"));
@@ -1777,7 +1798,7 @@ void printItemMiscGenericGamepad(const Item &item, const bool isOil, bool isCast
 {
 	if (item._iMiscId == IMISC_MAPOFDOOM) {
 		AddItemInfoBoxString(_("Activate to view"));
-	} else if (isOil) {
+	} else if (isOil || item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS) {
 		PrintItemOil(item._iMiscId);
 		if (!invflag) {
 			AddItemInfoBoxString(_("Open inventory to use"));
@@ -3849,6 +3870,159 @@ void CheckIdentify(Player &player, int cii)
 	CalcPlrInv(player, true);
 }
 
+void DoAugment(Player &player, int cii)
+{
+	Item *pi;
+	bool isEquipped = (cii < NUM_INVLOC);
+
+	if (cii >= NUM_INVLOC)
+		pi = &player.InvList[cii - NUM_INVLOC];
+	else
+		pi = &player.InvBody[cii];
+
+	AugmentItem(*pi, player);
+	CalcPlrInv(player, true);
+
+	// If the item was equipped, send network message to properly sync the stat changes
+	if (isEquipped && &player == MyPlayer) {
+		NetSendCmdChItem(false, static_cast<uint8_t>(cii));
+	}
+}
+
+void AugmentItem(Item &item, const Player &player)
+{
+	// If the item is not a weapon, armor, or shield, do nothing
+	if (item._itype == ItemType::Misc || item._itype == ItemType::Staff || item._itype == ItemType::Gold || item._itype == ItemType::Ring || item._itype == ItemType::Amulet) {
+		return;
+	}
+
+	// If the item is not normal, do nothing
+	if (item._iMagical != ITEM_QUALITY_NORMAL) {
+		return;
+	}
+
+	// Players plvl
+	const int plvl = player.getCharacterLevel();
+
+	// Make the item magical by using the "GetItemBonus" function with onlygood=true and uper=1
+	// Be sure to reroll the RNG
+	GenerateNewSeed(item);
+	const int itemLevel = std::max(1, player.getCharacterLevel() / 2);
+	GetItemBonus(player, item, plvl / 2, plvl, true, true);
+
+	// Mark the item as identified
+	item._iIdentified = true;
+
+	PlaySfxLoc(SfxID::SpellRepair, player.position.tile);
+}
+
+void DoChaos(Player &player, int cii)
+{
+	Item *pi;
+	bool isInInventory = (cii >= NUM_INVLOC);
+	int invListIndex = -1;
+
+	if (isInInventory) {
+		invListIndex = cii - NUM_INVLOC;
+		pi = &player.InvList[invListIndex];
+	} else {
+		pi = &player.InvBody[cii];
+	}
+
+	// Store original size before transformation
+	const Size originalSize = GetInventorySize(*pi);
+
+	bool result = ChaosItem(*pi, player);
+
+	// Handle the result based on whether item was transformed or destroyed
+	if (isInInventory && invListIndex != -1) {
+		if (!result && pi->isEmpty()) {
+			// Item was destroyed (50/50 chance failed), properly remove it from inventory
+			player.RemoveInvItem(invListIndex, true);
+		} else if (result) {
+			// Item was transformed, check if size changed
+			const Size newSize = GetInventorySize(*pi);
+
+			// If the size changed, revalidate inventory fit
+			if (newSize.width != originalSize.width || newSize.height != originalSize.height) {
+				// Make a copy of the transformed item
+				Item itemCopy = *pi;
+
+				// Remove the item from inventory (this clears grid and shifts items)
+				player.RemoveInvItem(invListIndex, false);
+
+				// Try to place it back in inventory at any valid position
+				if (!AutoPlaceItemInInventory(player, itemCopy, &player == MyPlayer)) {
+					// No space in inventory, drop it on the ground
+					const int itemIndex = AllocateItem();
+					Items[itemIndex] = itemCopy;
+					GetSuperItemSpace(player.position.tile, itemIndex);
+					NetSendCmdPItem(false, CMD_SPAWNITEM, Items[itemIndex].position, Items[itemIndex]);
+
+					if (&player == MyPlayer) {
+						player.Say(HeroSpeech::ICantCarryAnymore);
+					}
+				}
+			}
+		}
+	}
+
+	CalcPlrInv(player, true);
+
+	// If the item was equipped, send network message to properly sync the stat changes
+	if (!isInInventory && &player == MyPlayer) {
+		NetSendCmdChItem(false, static_cast<uint8_t>(cii));
+	}
+}
+
+bool ChaosItem(Item &item, const Player &player)
+{
+	// If the item is not a weapon, armor, or shield, do nothing
+	if (item._itype == ItemType::Misc || item._itype == ItemType::Staff || item._itype == ItemType::Gold || item._itype == ItemType::Ring || item._itype == ItemType::Amulet) {
+		return false;
+	}
+
+	// If the item is not normal, do nothing
+	if (item._iMagical != ITEM_QUALITY_NORMAL) {
+		return false;
+	}
+
+	// Get the item's type (Sword, Axe, Bow, etc.)
+	const ItemType itemType = item._itype;
+
+	// Get the player's level to determine which uniques are available
+	const int plvl = player.getCharacterLevel();
+
+	// Get all valid unique items for this item type (not just the specific base item)
+	// This allows daggers to roll any unique sword, clubs to roll any unique mace, etc.
+	auto validUniques = GetValidUniquesByType(plvl, itemType);
+
+	// If there are no valid uniques for this item type, do nothing
+	if (validUniques.empty()) {
+		return false;
+	}
+
+	GenerateNewSeed(item);
+	if (GenerateRnd(100) < 60) {
+		item.clear();
+		PlaySfxLoc(SfxID::BarrelBreak, player.position.tile);
+		return false;
+	}
+
+	// Pick a random unique from the valid ones
+	const int randomIndex = GenerateRnd(validUniques.size());
+	const _unique_items selectedUniqueId = static_cast<_unique_items>(validUniques[randomIndex]);
+
+	// Apply the unique item properties
+	GetUniqueItem(player, item, selectedUniqueId);
+
+	// Mark the item as identified
+	item._iIdentified = true;
+
+	PlaySfxLoc(SfxID::SpellRepair, player.position.tile);
+	return true;
+}
+
 void DoRepair(Player &player, int cii)
 {
 	Item *pi;
@@ -4341,6 +4515,30 @@ void UseItem(Player &player, item_misc_id mid, SpellID spellID, int spellFrom)
 		}
 		NewCursor(CURSOR_OIL);
 		break;
+	case IMISC_ORBAUGMENT:
+		if (&player != MyPlayer) {
+			return;
+		}
+		if (SpellbookFlag) {
+			SpellbookFlag = false;
+		}
+		if (!invflag) {
+			invflag = true;
+		}
+		NewCursor(CURSOR_AUGMENT);
+		break;
+	case IMISC_ORBCHAOS:
+		if (&player != MyPlayer) {
+			return;
+		}
+		if (SpellbookFlag) {
+			SpellbookFlag = false;
+		}
+		if (!invflag) {
+			invflag = true;
+		}
+		NewCursor(CURSOR_CHAOS);
+		break;
 	case IMISC_SPECELIX:
 		ModifyPlrStr(player, 3);
 		ModifyPlrMag(player, 3);
@@ -4530,6 +4728,10 @@ void SpawnWitch(int lvl)
 		item._iCreateInfo = lvl | CF_WITCH;
 		item._iIdentified = true;
 
+		// Don't sell orbs
+		if (item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS)
+			continue;
+
 		WitchItems.push_back(item);
 	}
 
@@ -4675,6 +4877,10 @@ void SpawnHealer(int lvl)
 			item._iCreateInfo = lvl | CF_HEALER;
 			item._iIdentified = true;
 		}
+
+		// Don't sell orbs
+		if (item._iMiscId == IMISC_ORBAUGMENT || item._iMiscId == IMISC_ORBCHAOS)
+			continue;
 
 		HealerItems.push_back(item);
 	}

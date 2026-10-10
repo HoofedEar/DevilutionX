@@ -411,12 +411,14 @@ void LeftMouseDown(uint16_t modState)
 			}
 		}
 	} else {
-		if (!ChatFlag && !DropGoldFlag && !IsWithdrawGoldOpen && !gmenu_is_active())
-			CheckInvScrn(isShiftHeld, isCtrlHeld);
-		CheckMainPanelButton();
-		CheckStashButtonPress(MousePosition);
-		if (pcurs > CURSOR_HAND && pcurs < CURSOR_FIRSTITEM)
-			NewCursor(CURSOR_HAND);
+		if (!TryIconCurs()) {
+			if (!ChatFlag && !DropGoldFlag && !IsWithdrawGoldOpen && !gmenu_is_active())
+				CheckInvScrn(isShiftHeld, isCtrlHeld);
+			CheckMainPanelButton();
+			CheckStashButtonPress(MousePosition);
+			if (pcurs > CURSOR_HAND && pcurs < CURSOR_FIRSTITEM)
+				NewCursor(CURSOR_HAND);
+		}
 	}
 }
 
@@ -2848,6 +2850,28 @@ bool TryIconCurs()
 			Item &item = Stash.stashList[pcursstashitem];
 			item._iIdentified = true;
 			Stash.dirty = true;
+		}
+		NewCursor(CURSOR_HAND);
+		return true;
+	}
+
+	if (pcurs == CURSOR_AUGMENT) {
+		if (pcursinvitem != -1 && !IsInspectingPlayer())
+			DoAugment(myPlayer, pcursinvitem);
+		else if (pcursstashitem != StashStruct::EmptyCell) {
+			Item &item = Stash.stashList[pcursstashitem];
+			AugmentItem(item, myPlayer);
+		}
+		NewCursor(CURSOR_HAND);
+		return true;
+	}
+
+	if (pcurs == CURSOR_CHAOS) {
+		if (pcursinvitem != -1 && !IsInspectingPlayer())
+			DoChaos(myPlayer, pcursinvitem);
+		else if (pcursstashitem != StashStruct::EmptyCell) {
+			Item &item = Stash.stashList[pcursstashitem];
+			ChaosItem(item, myPlayer);
 		}
 		NewCursor(CURSOR_HAND);
 		return true;

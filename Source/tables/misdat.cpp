@@ -187,6 +187,8 @@ std::expected<MissileData::AddFn, std::string> ParseMissileAddFn(std::string_vie
 	if (value == "AddRuneOfNova") return AddRuneOfNova;
 	if (value == "AddRuneOfImmolation") return AddRuneOfImmolation;
 	if (value == "AddRuneOfStone") return AddRuneOfStone;
+	if (value == "AddAugment") return AddAugment;
+	if (value == "AddChaos") return AddChaos;
 	if (value == "AddReflect") return AddReflect;
 	if (value == "AddBerserk") return AddBerserk;
 	if (value == "AddHorkSpawn") return AddHorkSpawn;
