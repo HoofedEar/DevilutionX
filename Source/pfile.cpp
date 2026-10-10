@@ -57,10 +57,10 @@
 
 namespace devilution {
 
-#define PASSWORD_SPAWN_SINGLE "adslhfb1"
-#define PASSWORD_SPAWN_MULTI "lshbkfg1"
-#define PASSWORD_SINGLE "xrgyrkj1"
-#define PASSWORD_MULTI "szqnlsk1"
+#define PASSWORD_SPAWN_SINGLE "x7rbmmes"
+#define PASSWORD_SPAWN_MULTI "szbfesk7"
+#define PASSWORD_SINGLE "x7rbmmel"
+#define PASSWORD_MULTI "szbfesk8"
 
 bool gbValidSaveFile;
 
@@ -82,8 +82,8 @@ std::string GetSavePath(uint32_t saveNum, std::string_view savePrefix = {})
 	const std::string_view ext = GetSaveExtension();
 	return StrCat(paths::PrefPath(), savePrefix,
 	    gbIsSpawn
-	        ? (gbIsMultiplayer ? "share_" : "spawn_")
-	        : (gbIsMultiplayer ? "multi_" : "single_"),
+	        ? (gbIsMultiplayer ? "hx_share_" : "hx_spawn_")
+	        : (gbIsMultiplayer ? "hx_multi_" : "hx_single_"),
 	    saveNum,
 #ifdef UNPACKED_SAVES
 	    "_", ext, DIRECTORY_SEPARATOR_STR
@@ -97,7 +97,7 @@ std::string GetStashSavePath()
 {
 	const std::string_view ext = GetSaveExtension();
 	return StrCat(paths::PrefPath(),
-	    gbIsSpawn ? "stash_spawn" : "stash",
+	    gbIsSpawn ? "hx_stash_spawn" : "hx_stash",
 #ifdef UNPACKED_SAVES
 	    "_", ext, DIRECTORY_SEPARATOR_STR
 #else

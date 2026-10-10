@@ -94,11 +94,14 @@ bool IsGameCompatible(const GameData &data)
 	return data.versionMajor == PROJECT_VERSION_MAJOR
 	    && data.versionMinor == PROJECT_VERSION_MINOR
 	    && data.versionPatch == PROJECT_VERSION_PATCH
-	    && data.isSpawn == (gbIsSpawn ? 1 : 0);
+	    && data.isSpawn == (gbIsSpawn ? 1 : 0)
+	    && data.programid == GetGameId();
 }
 
 static std::string GetErrorMessageIncompatibility(const GameData &data)
 {
+	if (data.programid != GetGameId())
+		return std::string(_("The host is running a different game than you."));
 	if (data.isSpawn != (gbIsSpawn ? 1 : 0)) {
 		if (data.isSpawn)
 			return std::string(_("The host is running the shareware edition."));

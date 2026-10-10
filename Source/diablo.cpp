@@ -1822,7 +1822,7 @@ uint32_t GetGameId()
 	for (const ModIdentifier &mod : ActiveModIdentifiers) {
 		const std::string &programId = mod.manifest.programId;
 		const uint32_t candidate = programId.size() == 4 ? LoadBE32(programId.data()) : 0;
-		// A mod may not brand itself as DRTL/DSHR
+		// A mod may not brand itself as the base game id
 		if (candidate != 0 && candidate != GameIdDiabloFull && candidate != GameIdDiabloSpawn) {
 			declared = candidate; // last active mod that declares one wins
 			hasDeclared = true;
