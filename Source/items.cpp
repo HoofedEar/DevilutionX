@@ -1478,6 +1478,7 @@ void ItemRndDur(Item &item)
 		item._iDurability = GenerateRnd(item._iMaxDur / 2) + (item._iMaxDur / 4) + 1;
 }
 
+// Can adjust drop rates here
 int GetItemBLevel(int lvl, item_misc_id miscId, bool onlygood, bool uper15)
 {
 	int iblvl = -1;
@@ -2517,9 +2518,9 @@ void CalcPlrPrimaryStats(Player &player, int strength, int &magic, int dexterity
 	const uint8_t playerLevel = player.getCharacterLevel();
 
 	if (HasAnyOf(player._pSpellFlags, SpellFlag::RageActive)) {
-		strength += 2 * playerLevel;
+		strength += 4 * playerLevel;
 		dexterity += playerLevel + playerLevel / 2;
-		vitality += 2 * playerLevel;
+		vitality += 4 * playerLevel;
 	}
 	if (HasAnyOf(player._pSpellFlags, SpellFlag::RageCooldown)) {
 		strength -= 2 * playerLevel;
@@ -3182,6 +3183,8 @@ void GetItemAttrs(Item &item, _item_indexes itemData, int lvl)
 	if (leveltype == DTYPE_HELL)
 		rndv += rndv / 8;
 
+	rndv = rndv * 2;
+
 	item._ivalue = std::min(rndv, GOLD_MAX_LIMIT);
 	SetPlrHandGoldCurs(item);
 }
@@ -3469,7 +3472,10 @@ void SpawnItem(Monster &monster, Point position, bool sendmsg, bool spawn /*= fa
 	GetSuperItemSpace(position, ii);
 	const int uper = monster.isUnique() ? 15 : 1;
 
-	const int8_t mLevel = monster.data().level;
+	// Previously was:
+	// const int8_t mLevel = monster.data().level;
+	const int8_t mLevel = monster.level(sgGameInitInfo.nDifficulty);
+
 	SetupAllItems(*MyPlayer, item, idx, AdvanceRndSeed(), mLevel, uper, onlygood, false);
 	TryRandomUniqueItem(item, idx, mLevel, uper, onlygood, false);
 	SetupItem(item);
