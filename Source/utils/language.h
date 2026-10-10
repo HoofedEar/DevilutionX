@@ -7,7 +7,9 @@
 // <libintl.h>, which declares `ngettext`. Include it before defining the
 // `ngettext` macro below, so that the declaration is not rewritten into a
 // conflicting `LanguagePluralTranslate` overload that is never defined.
-#if __has_include(<libintl.h>)
+// Skipped on MinGW: its libstdc++ does not include <libintl.h>, and MSYS2's
+// <libintl.h> redirects printf-family calls to libintl_* (requiring -lintl).
+#if __has_include(<libintl.h>) && !defined(__MINGW32__)
 #include <libintl.h>
 // GNU libintl.h may define `ngettext` as a macro itself.
 #undef ngettext
