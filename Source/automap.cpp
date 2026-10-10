@@ -1546,7 +1546,7 @@ std::unique_ptr<AutomapTile[]> LoadAutomapData(size_t &tileCount)
 } // namespace
 
 bool AutomapActive;
-AutomapType CurrentAutomapType = AutomapType::Opaque;
+AutomapType CurrentAutomapType = AutomapType::Minimap;
 uint8_t AutomapView[DMAXX][DMAXY];
 int AutoMapScale;
 int MinimapScale;
@@ -1705,6 +1705,13 @@ void StartAutomap()
 	AutomapActive = true;
 }
 
+void StartMinimap()
+{
+	AutomapOffset = { 0, 0 };
+	AutomapActive = true;
+	SetAutomapType(AutomapType::Minimap);
+}
+
 void AutomapUp()
 {
 	AutomapOffset.deltaX--;
@@ -1783,22 +1790,8 @@ void DrawAutomap(const Surface &out)
 		cells++;
 
 	if (GetAutomapType() == AutomapType::Minimap) {
-		// Background fill
-		DrawHalfTransparentRectTo(out, MinimapRect.position.x, MinimapRect.position.y, MinimapRect.size.width, MinimapRect.size.height);
-
-		const uint8_t frameShadowColor = PAL16_YELLOW + 12;
-
-		// Shadow
-		DrawHorizontalLine(out, MinimapRect.position + Displacement { -1, -1 }, MinimapRect.size.width + 1, frameShadowColor);
-		DrawHorizontalLine(out, MinimapRect.position + Displacement { -2, MinimapRect.size.height + 1 }, MinimapRect.size.width + 4, frameShadowColor);
-		DrawVerticalLine(out, MinimapRect.position + Displacement { -1, 0 }, MinimapRect.size.height, frameShadowColor);
-		DrawVerticalLine(out, MinimapRect.position + Displacement { MinimapRect.size.width + 1, -2 }, MinimapRect.size.height + 3, frameShadowColor);
-
-		// Frame
-		DrawHorizontalLine(out, MinimapRect.position + Displacement { -2, -2 }, MinimapRect.size.width + 3, MapColorsDim);
-		DrawHorizontalLine(out, MinimapRect.position + Displacement { -2, MinimapRect.size.height }, MinimapRect.size.width + 3, MapColorsDim);
-		DrawVerticalLine(out, MinimapRect.position + Displacement { -2, -1 }, MinimapRect.size.height + 1, MapColorsDim);
-		DrawVerticalLine(out, MinimapRect.position + Displacement { MinimapRect.size.width, -1 }, MinimapRect.size.height + 1, MapColorsDim);
+		// Background and frame removed for cleaner minimap appearance
+		// (Background fill, shadow, and frame code commented out)
 
 		if (AutoMapShowItems)
 			SearchAutomapItem(out, myPlayerOffset, 8, [](Point position) {
