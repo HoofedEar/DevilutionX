@@ -1,5 +1,8 @@
 // File Manager functionality
 (function() {
+	// Must match the SDL_GetPrefPath() arguments in Source/utils/paths.cpp
+	const GAME_DATA_DIR = '/libsdl/hoofedear/diavarice';
+
 	const modal = document.getElementById('fileManagerModal');
 	const fileManagerBtn = document.getElementById('fileManagerBtn');
 	const closeModalBtn = document.getElementById('closeModal');
@@ -79,12 +82,12 @@
 			reader.onload = function(e) {
 				try {
 					const data = new Uint8Array(e.target.result);
-					// Upload to the devilution subdirectory where the game searches
-					const path = '/libsdl/diasurgical/devilution/' + file.name; // Might want to make this dynamic later, since source mods might rename the paths
+					// Upload to the pref path directory where the game searches
+					const path = GAME_DATA_DIR + '/' + file.name;
 
 					// Create directory if it doesn't exist
 					try {
-						FS.mkdir('/libsdl/diasurgical/devilution');
+						FS.mkdir(GAME_DATA_DIR);
 					} catch (e) {
 						// Directory might already exist, ignore
 					}
@@ -123,16 +126,16 @@
 		}
 
 		try {
-			// Check if devilution directory exists
+			// Check if the game data directory exists
 			try {
-				FS.stat('/libsdl/diasurgical/devilution');
+				FS.stat(GAME_DATA_DIR);
 			} catch (e) {
 				// Directory doesn't exist yet
 				mpqFilesList.innerHTML = '<p class="info-text">No MPQ files found.</p>';
 				return;
 			}
 
-			const files = FS.readdir('/libsdl/diasurgical/devilution');
+			const files = FS.readdir(GAME_DATA_DIR);
 			const mpqFiles = files.filter(f =>
 				f.toLowerCase().endsWith('.mpq') && f !== '.' && f !== '..'
 			);
@@ -144,7 +147,7 @@
 
 			mpqFilesList.innerHTML = '';
 			mpqFiles.forEach(filename => {
-				const path = '/libsdl/diasurgical/devilution/' + filename;
+				const path = GAME_DATA_DIR + '/' + filename;
 				const stat = FS.stat(path);
 
 				const item = document.createElement('div');
@@ -181,7 +184,7 @@
 		}
 
 		try {
-			const path = '/libsdl/diasurgical/devilution/' + filename;
+			const path = GAME_DATA_DIR + '/' + filename;
 			FS.unlink(path);
 
 			// Sync deletion to IndexedDB
@@ -207,7 +210,7 @@
 		}
 
 		try {
-			const iniPath = '/libsdl/diasurgical/devilution/diablo.ini';
+			const iniPath = GAME_DATA_DIR + '/diablo.ini';
 
 			// Check if file exists
 			try {

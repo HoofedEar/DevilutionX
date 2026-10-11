@@ -6,8 +6,8 @@ Module['preRun'].push(function() {
   console.log('Setting up IDBFS for persistent saves...');
 
   // SDL uses //libsdl/ as the base path for Emscripten
-  // Save files are in //libsdl/diasurgical/devilution/
-  // Config files (diablo.ini) would be in //libsdl/diasurgical/
+  // Save files are in //libsdl/hoofedear/diavarice/
+  // Config files (diablo.ini) are in //libsdl/hoofedear/diavarice/ as well
   try {
     // Helper function to create directory if it doesn't exist
     function mkdirSafe(path) {
@@ -36,11 +36,11 @@ Module['preRun'].push(function() {
 
     // Create SDL directory hierarchy if needed
     mkdirSafe('/libsdl');
-    mkdirSafe('/libsdl/diasurgical');
+    mkdirSafe('/libsdl/hoofedear');
 
-    // Mount the diasurgical directory as IDBFS to persist saves AND settings
-    FS.mount(IDBFS, {}, '/libsdl/diasurgical');
-    console.log('IDBFS mounted successfully at /libsdl/diasurgical');
+    // Mount the hoofedear directory as IDBFS to persist saves AND settings
+    FS.mount(IDBFS, {}, '/libsdl/hoofedear');
+    console.log('IDBFS mounted successfully at /libsdl/hoofedear');
 
     // Sync from IndexedDB to memory (load existing saves)
     Module.addRunDependency('syncfs');
