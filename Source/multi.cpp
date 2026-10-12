@@ -28,6 +28,7 @@
 #include "engine/random.hpp"
 #include "engine/world_tile.hpp"
 #include "game_mode.hpp"
+#include "gamemenu.h"
 #include "menu.h"
 #include "monster.h"
 #include "msg.h"
@@ -48,6 +49,7 @@
 #include "utils/language.h"
 #include "utils/log.hpp"
 #include "utils/str_cat.hpp"
+#include "utils/ui_fwd.h"
 
 namespace devilution {
 
@@ -72,15 +74,17 @@ bool sgbNetInited;
 uint32_t player_state[MAX_PLRS];
 Uint32 playerInfoTimers[MAX_PLRS];
 bool IsLoopback;
+std::optional<std::string> ServerKickMessage;
 
 /**
  * Contains the set of supported event types supported by the multiplayer
  * event handler.
  */
-const event_type EventTypes[3] = {
+const event_type EventTypes[4] = {
 	EVENT_TYPE_PLAYER_LEAVE_GAME,
 	EVENT_TYPE_PLAYER_CREATE_GAME,
-	EVENT_TYPE_PLAYER_MESSAGE
+	EVENT_TYPE_PLAYER_MESSAGE,
+	EVENT_TYPE_KICKED_BY_SERVER
 };
 
 void SwapGameDataLE(GameData &gameData)
@@ -498,6 +502,18 @@ void HandleEvents(_SNETEVENT *pEvt)
 		}
 		EventPlrMsg(data);
 	} break;
+	case EVENT_TYPE_KICKED_BY_SERVER: {
+		std::string_view reason(static_cast<const char *>(pEvt->data), pEvt->databytes);
+		if (const size_t nullPos = reason.find('\0'); nullPos != std::string_view::npos) {
+			reason.remove_suffix(reason.size() - nullPos);
+		}
+		if (reason.empty())
+			ServerKickMessage = std::string(_("You were kicked from the server."));
+		else
+			ServerKickMessage = FormatRuntime(_("You were kicked from the server:\n{:s}"), reason);
+		// Leave once it is safe to, see multi_handle_delta() and msg_wait_resync()
+		gbGameDestroyed = true;
+	} break;
 	}
 }
 
@@ -689,7 +705,8 @@ void multi_net_ping()
 bool multi_handle_delta()
 {
 	if (gbGameDestroyed) {
-		gbRunGame = false;
+		// Leave the same way as "Exit to Main Menu", which also clears the death screen
+		gamemenu_exit_game(false);
 		return false;
 	}
 
@@ -806,6 +823,15 @@ void multi_send_zero_packet(uint8_t pnum, _cmd_id bCmd, const std::byte *data, s
 
 		offset += dwBody;
 	}
+}
+
+bool ShowServerKickMessage()
+{
+	if (!ServerKickMessage)
+		return false;
+	UiErrorOkDialog(PROJECT_NAME, *ServerKickMessage, /*error=*/false);
+	ServerKickMessage = std::nullopt;
+	return true;
 }
 
 void NetClose()

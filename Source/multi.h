@@ -45,6 +45,8 @@ extern bool PublicGame;
 extern uint8_t gbDeltaSender;
 extern uint32_t player_state[MAX_PLRS];
 extern bool IsLoopback;
+/** Set when a dedicated server kicked us, to be shown once we are back in the menus. */
+extern std::optional<std::string> ServerKickMessage;
 
 void SwapGameDataLE(GameData &gameData);
 DVL_API_FOR_TEST std::string DescribeLeaveReason(leaveinfo_t leaveReason);
@@ -64,6 +66,11 @@ void multi_net_ping();
 bool multi_handle_delta();
 void ProcessGameMessagePackets();
 void multi_send_zero_packet(uint8_t pnum, _cmd_id bCmd, const std::byte *data, size_t size);
+/**
+ * @brief Tells the player they were kicked, if they were.
+ * @return Whether a message was shown
+ */
+bool ShowServerKickMessage();
 void NetClose();
 bool NetInit(bool bSinglePlayer);
 void recv_plrinfo(Player &player, const TCmdPlrInfoHdr &header, bool recv);

@@ -42,6 +42,7 @@
 #include "missiles.h"
 #include "monster.h"
 #include "monsters/validation.hpp"
+#include "multi.h"
 #include "nthread.h"
 #include "objects.h"
 #include "options.h"
@@ -2746,7 +2747,8 @@ bool msg_wait_resync()
 	}
 
 	if (gbGameDestroyed) {
-		UiErrorOkDialog(PROJECT_NAME, _("The game ended"), /*error=*/false);
+		if (!ShowServerKickMessage())
+			UiErrorOkDialog(PROJECT_NAME, _("The game ended"), /*error=*/false);
 		FreePackets();
 		return false;
 	}

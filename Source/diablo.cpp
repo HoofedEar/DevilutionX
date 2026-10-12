@@ -2722,8 +2722,10 @@ bool StartGame(bool bNewGame, bool bSinglePlayer)
 
 		// If the player left the game into the main menu,
 		// initialize main menu resources.
-		if (gbRunGameResult)
+		if (gbRunGameResult) {
 			UiInitialize();
+			ShowServerKickMessage();
+		}
 		if (ReturnToMainMenu)
 			return true;
 	} while (gbRunGameResult);

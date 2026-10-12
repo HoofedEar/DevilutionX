@@ -109,6 +109,7 @@ private:
 	std::expected<void, PacketError> HandleDisconnect(packet &pkt);
 	std::expected<void, PacketError> HandleEchoRequest(packet &pkt);
 	std::expected<void, PacketError> HandleEchoReply(packet &pkt);
+	std::expected<void, PacketError> HandleServerMessage(packet &pkt);
 };
 
 } // namespace net

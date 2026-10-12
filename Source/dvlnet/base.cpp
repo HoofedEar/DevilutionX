@@ -164,6 +164,32 @@ std::expected<void, PacketError> base::HandleDisconnect(packet &pkt)
 	return {};
 }
 
+std::expected<void, PacketError> base::HandleServerMessage(packet &pkt)
+{
+	return pkt.Message().and_then([&](const buffer_t *message) -> std::expected<void, PacketError> {
+		if (message->empty())
+			return std::unexpected(PacketError());
+		buffer_t text(message->begin() + 1, message->end());
+		_SNETEVENT ev;
+		switch (static_cast<server_message_t>((*message)[0])) {
+		case server_message_t::Notice:
+			ev.eventid = EVENT_TYPE_PLAYER_MESSAGE;
+			break;
+		case server_message_t::Kicked:
+			ev.eventid = EVENT_TYPE_KICKED_BY_SERVER;
+			break;
+		default:
+			// From a newer server
+			return {};
+		}
+		ev.playerid = PLR_MASTER;
+		ev.data = text.data();
+		ev.databytes = text.size();
+		RunEventHandler(ev);
+		return {};
+	});
+}
+
 std::expected<void, PacketError> base::HandleEchoRequest(packet &pkt)
 {
 	// If we have already left the game,
@@ -227,6 +253,8 @@ std::expected<void, PacketError> base::RecvLocal(packet &pkt)
 	}
 	switch (pkt.Type()) {
 	case PT_MESSAGE:
+		if (pkt.Source() == PLR_MASTER)
+			return HandleServerMessage(pkt);
 		return pkt.Message().transform([&](const buffer_t *message) {
 			message_queue.emplace_back(pkt.Source(), *message);
 		});

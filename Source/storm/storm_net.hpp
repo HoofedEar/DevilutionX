@@ -22,6 +22,7 @@ enum event_type : uint8_t {
 	EVENT_TYPE_PLAYER_CREATE_GAME,
 	EVENT_TYPE_PLAYER_LEAVE_GAME,
 	EVENT_TYPE_PLAYER_MESSAGE,
+	EVENT_TYPE_KICKED_BY_SERVER,
 };
 
 extern const char *ConnectionNames[];

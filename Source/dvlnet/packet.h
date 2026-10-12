@@ -61,12 +61,24 @@ struct turn_t {
 static constexpr plr_t PLR_MASTER = 0xFE;
 static constexpr plr_t PLR_BROADCAST = 0xFF;
 
+/**
+ * @brief The first byte of a PT_MESSAGE sent by a dedicated server (source PLR_MASTER), followed by UTF-8 text.
+ */
+enum class server_message_t : uint8_t {
+	/** @brief Shown like other game events. */
+	Notice = 0,
+	/** @brief The text is the reason, possibly empty. */
+	Kicked = 1,
+};
+
 class PacketError {
 public:
 	enum class ErrorCode : uint8_t {
 		None,
 		EncryptionFailed,
-		DecryptionFailed
+		DecryptionFailed,
+		/** @brief Sent by a dedicated server to a client whose IP address is banned. */
+		Banned
 	};
 
 	PacketError()

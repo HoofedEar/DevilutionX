@@ -217,6 +217,8 @@ void tcp_client::HandleTcpErrorCode()
 	auto code = static_cast<PacketError::ErrorCode>(pktData[0]);
 	if (code == PacketError::ErrorCode::DecryptionFailed)
 		RaiseIoHandlerError(_("Server failed to decrypt your packet. Check if you typed the password correctly."));
+	else if (code == PacketError::ErrorCode::Banned)
+		RaiseIoHandlerError(_("You are banned from this server."));
 	else
 		RaiseIoHandlerError(std::format("Unknown error code received from server: {:#04x}", pktData[0]));
 }

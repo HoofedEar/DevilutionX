@@ -108,6 +108,11 @@ void tcp_server::HandleReceive(const scc &con, const asio::error_code &ec,
 			}
 		} else {
 			con->timeout = timeout_active;
+			// Players may only speak for themselves, e.g. not as PLR_MASTER to send server messages
+			if ((*pkt)->Source() != con->plr) {
+				Log("Ignoring packet from player {} claiming to be player {}", con->plr, (*pkt)->Source());
+				continue;
+			}
 			std::expected<void, PacketError> result = HandleReceivePacket(**pkt);
 			if (!result.has_value()) {
 				Log("Network error: {}", result.error().what());
