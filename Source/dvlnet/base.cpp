@@ -48,6 +48,11 @@ DvlNetLatencies base::get_latencies(uint8_t playerid)
 	return latencies;
 }
 
+bool base::joined_empty_game()
+{
+	return joinedEmptyGame_;
+}
+
 void base::RunEventHandler(_SNETEVENT &ev)
 {
 	auto f = registered_handlers[static_cast<event_type>(ev.eventid)];
@@ -98,6 +103,13 @@ std::expected<void, PacketError> base::HandleAccept(packet &pkt)
 		}
 		// we joined and did not create
 		game_init_info = info;
+		// The server sends PT_CONNECT for every existing player before PT_JOIN_ACCEPT,
+		// so if nobody else is connected there is nobody to receive level data from
+		joinedEmptyGame_ = true;
+		for (plr_t i = 0; i < MAX_PLRS; i++) {
+			if (i != plr_self && IsConnected(i))
+				joinedEmptyGame_ = false;
+		}
 		_SNETEVENT ev;
 		ev.eventid = EVENT_TYPE_PLAYER_CREATE_GAME;
 		ev.playerid = plr_self;
@@ -385,8 +397,9 @@ bool base::SNetSendTurn(char *data, size_t size)
 
 std::expected<void, PacketError> base::SendTurnIfReady(turn_t turn)
 {
+	// Whoever starts the game decides the turn sequence, everyone else syncs to the first turn they receive
 	if (awaitingSequenceNumber_)
-		awaitingSequenceNumber_ = !IsGameHost();
+		awaitingSequenceNumber_ = !IsGameHost() && !joinedEmptyGame_;
 
 	if (!awaitingSequenceNumber_) {
 		std::expected<std::unique_ptr<packet>, PacketError> pkt

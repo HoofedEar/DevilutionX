@@ -42,6 +42,7 @@ public:
 	void clear_password() override;
 
 	DvlNetLatencies get_latencies(uint8_t playerid) override;
+	bool joined_empty_game() override;
 
 	~base() override = default;
 
@@ -92,6 +93,7 @@ protected:
 private:
 	std::array<PlayerState, MAX_PLRS> playerStateTable_;
 	bool awaitingSequenceNumber_ = true;
+	bool joinedEmptyGame_ = false;
 	uint32_t lastEchoTime = 0;
 
 	plr_t GetOwner();

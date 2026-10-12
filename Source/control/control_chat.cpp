@@ -121,7 +121,7 @@ void DrawChatBox(const Surface &out)
 
 	x += 46;
 	int talkBtn = 0;
-	for (size_t i = 0; i < Players.size(); i++) {
+	for (size_t i = 0; i < Players.size() && talkBtn < MuteButtons; i++) {
 		Player &player = Players[i];
 		if (&player == MyPlayer)
 			continue;

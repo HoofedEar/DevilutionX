@@ -1987,7 +1987,10 @@ void AiRanged(Monster &monster)
 		if (static_cast<MonsterMode>(monster.var1) == MonsterMode::RangedAttack) {
 			AiDelay(monster, GenerateRnd(20));
 		} else if (monster.distanceToEnemy() < 4) {
-			if (GenerateRnd(100) < 10 * (monster.intelligence + 7))
+			// Mostly hold ground and shoot, occasionally backing off a few steps (like skeleton archers)
+			const int v = GenerateRnd(100);
+			const bool wasWalking = IsMonsterModeMove(static_cast<MonsterMode>(monster.var1)) && monster.var2 == 0;
+			if (v < 2 * monster.intelligence + (wasWalking ? 63 : 13))
 				RandomWalk(monster, Opposite(md));
 		}
 		if (monster.mode == MonsterMode::Stand) {

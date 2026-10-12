@@ -5,7 +5,8 @@
 namespace devilution {
 
 #define MAXLIGHTS 32
-#define MAXVISION 4
+/** Vision is indexed by player id, see MAX_PLRS. */
+#define MAXVISION 6
 #define NO_LIGHT -1
 
 constexpr char LightsMax = 15;

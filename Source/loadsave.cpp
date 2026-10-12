@@ -54,6 +54,8 @@ namespace {
 
 constexpr size_t MaxMissilesForSaveGame = 125;
 constexpr size_t PlayerWalkPathSizeForSaveGame = 25;
+/** Save games store the original 4 player town portals, regardless of MAXPORTAL. */
+constexpr int SavedPortalCount = 4;
 
 uint8_t giNumberQuests;
 uint8_t giNumberOfSmithPremiumItems;
@@ -2526,7 +2528,7 @@ std::expected<void, std::string> LoadGame(bool firstflag)
 
 	for (int i = 0; i < giNumberQuests; i++)
 		LoadQuest(&file, i);
-	for (int i = 0; i < MAXPORTAL; i++)
+	for (int i = 0; i < SavedPortalCount; i++)
 		LoadPortal(&file, i);
 
 	if (gbIsHellfireSaveGame != gbIsHellfire) {
@@ -2811,7 +2813,7 @@ void SaveGameData(SaveWriter &saveWriter)
 
 	for (int i = 0; i < giNumberQuests; i++)
 		SaveQuest(&file, i);
-	for (int i = 0; i < MAXPORTAL; i++)
+	for (int i = 0; i < SavedPortalCount; i++)
 		SavePortal(&file, i);
 	for (size_t i = 0; i < MonstersData.size(); ++i) {
 		const int monstkill = MonsterKillCounts[i];

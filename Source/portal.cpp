@@ -18,6 +18,8 @@ Portal Portals[MAXPORTAL];
 
 namespace {
 
+static_assert(MAXPORTAL == MAX_PLRS, "Every player needs a town portal");
+
 /** Current portal number (a portal array index). */
 size_t portalindex;
 
@@ -27,6 +29,8 @@ Point PortalTownPosition[MAXPORTAL] = {
 	{ 59, 40 },
 	{ 61, 40 },
 	{ 63, 40 },
+	{ 65, 40 },
+	{ 67, 40 },
 };
 
 } // namespace

@@ -279,4 +279,9 @@ DvlNetLatencies DvlNet_GetLatencies(uint8_t playerId)
 	return dvlnet_inst->get_latencies(playerId);
 }
 
+bool DvlNet_JoinedEmptyGame()
+{
+	return dvlnet_inst->joined_empty_game();
+}
+
 } // namespace devilution

@@ -46,7 +46,8 @@ if [[ "${TARGET}" == native ]]; then
         mingw-w64-x86_64-pkgconf \
         mingw-w64-x86_64-SDL2 \
         mingw-w64-x86_64-zlib \
-        mingw-w64-x86_64-bzip2
+        mingw-w64-x86_64-bzip2 \
+        mingw-w64-x86_64-libsodium
 fi
 
 # Optional: gettext tools enable building the translations (.gmo files).
@@ -105,13 +106,16 @@ fi
 BUILD_DIR=build-mingw64
 
 echo "==> Configuring"
-# NONET=ON: single-player only build; skips ZeroTier (libzt), TCP
-# networking, and libsodium entirely.
+# Client-Server (TCP) multiplayer only, for joining DevXServer or player
+# hosted games; ZeroTier (libzt) is skipped. libsodium encrypts packets
+# in password protected games.
 cmake -S. -B"${BUILD_DIR}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_TESTING=OFF \
     -DDEVILUTIONX_SYSTEM_BZIP2=OFF \
-    -DNONET=ON
+    -DNONET=OFF \
+    -DDISABLE_TCP=OFF \
+    -DDISABLE_ZERO_TIER=ON
 
 echo "==> Building"
 cmake --build "${BUILD_DIR}" -j "$(nproc)"

@@ -140,4 +140,9 @@ DvlNetLatencies cdwrap::get_latencies(uint8_t playerid)
 	return dvlnet_wrap->get_latencies(playerid);
 }
 
+bool cdwrap::joined_empty_game()
+{
+	return dvlnet_wrap->joined_empty_game();
+}
+
 } // namespace devilution::net

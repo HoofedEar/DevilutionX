@@ -147,5 +147,6 @@ void DvlNet_SetPassword(std::string pw);
 void DvlNet_ClearPassword();
 bool DvlNet_IsPublicGame();
 DvlNetLatencies DvlNet_GetLatencies(uint8_t playerId);
+bool DvlNet_JoinedEmptyGame();
 
 } // namespace devilution

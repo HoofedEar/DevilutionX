@@ -65,6 +65,12 @@ public:
 		return {};
 	}
 
+	/** @brief Whether we joined (rather than created) a game that had no other players in it, e.g. on a dedicated server. */
+	virtual bool joined_empty_game()
+	{
+		return false;
+	}
+
 	static std::unique_ptr<abstract_net> MakeNet(provider_t provider);
 };
 

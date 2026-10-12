@@ -469,7 +469,8 @@ void HandleEvents(_SNETEVENT *pEvt)
 		if (gameData.size != sizeof(GameData))
 			app_fatal(StrCat("Invalid size of game data: ", gameData.size));
 		sgGameInitInfo = gameData;
-		sgbPlayerTurnBitTbl[playerId] = true;
+		// Joining an empty game on a dedicated server, so start fresh like the game creator would
+		sgbPlayerTurnBitTbl[playerId] = !DvlNet_JoinedEmptyGame();
 	} break;
 	case EVENT_TYPE_PLAYER_LEAVE_GAME: {
 		sgbPlayerLeftGameTbl[playerId] = true;
