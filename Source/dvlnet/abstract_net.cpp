@@ -13,6 +13,8 @@
 
 #ifndef DISABLE_TCP
 #include "dvlnet/tcp_client.h"
+#elif defined(__EMSCRIPTEN__)
+#include "dvlnet/websocket_client.h"
 #endif
 #endif
 
@@ -28,6 +30,11 @@ std::unique_ptr<abstract_net> abstract_net::MakeNet(provider_t provider)
 	case SELCONN_TCP:
 		return std::make_unique<cdwrap>([]() {
 			return std::make_unique<tcp_client>();
+		});
+#elif defined(__EMSCRIPTEN__)
+	case SELCONN_TCP:
+		return std::make_unique<cdwrap>([]() {
+			return std::make_unique<websocket_client>();
 		});
 #endif
 #ifndef DISABLE_ZERO_TIER

@@ -995,6 +995,9 @@ if(NOT NONET)
     list(APPEND libdevilutionx_SRCS
       dvlnet/tcp_client.cpp
       dvlnet/tcp_server.cpp)
+  elseif(EMSCRIPTEN)
+    list(APPEND libdevilutionx_SRCS
+      dvlnet/websocket_client.cpp)
   endif()
   if(NOT DISABLE_ZERO_TIER)
     list(APPEND libdevilutionx_SRCS

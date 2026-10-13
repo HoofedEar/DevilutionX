@@ -95,6 +95,8 @@ enum OutlineColors : uint8_t {
 	OutlineColorsPlayer2 = (PAL16_YELLOW + 7),
 	OutlineColorsPlayer3 = (PAL16_RED + 7),
 	OutlineColorsPlayer4 = (PAL16_BLUE + 7),
+	OutlineColorsPlayer5 = (PAL16_GRAY + 1),
+	OutlineColorsPlayer6 = (PAL16_BEIGE + 3),
 	OutlineColorsObject = (PAL16_YELLOW + 2),
 	OutlineColorsTowner = (PAL16_BEIGE + 6),
 	OutlineColorsMonster = (PAL16_RED + 9),
@@ -450,6 +452,8 @@ uint8_t GetPlayerOutlineColor(int id)
 		OutlineColorsPlayer2,
 		OutlineColorsPlayer3,
 		OutlineColorsPlayer4,
+		OutlineColorsPlayer5,
+		OutlineColorsPlayer6,
 	};
 
 	if (id < 0 || id >= static_cast<int>(SDL_arraysize(PlayerOutlineColors)))

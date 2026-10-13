@@ -9,6 +9,10 @@
 #include <string_view>
 #include <vector>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #ifdef USE_SDL3
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_rect.h>
@@ -126,6 +130,11 @@ void UiInitGameSelectionList(std::string_view search)
 		CopyUtf8(selgame_Ip, GetOptions().Network.szPreviousZTGame, sizeof(selgame_Ip));
 	} else {
 		CopyUtf8(selgame_Ip, GetOptions().Network.szPreviousHost, sizeof(selgame_Ip));
+#ifdef __EMSCRIPTEN__
+		// The page can suggest a server (Module.defaultServer), for players who have not joined one before
+		if (selgame_Ip[0] == '\0')
+			CopyUtf8(selgame_Ip, emscripten_run_script_string("String(Module.defaultServer || '')"), sizeof(selgame_Ip));
+#endif
 	}
 
 	selgame_FreeVectors();
@@ -152,10 +161,13 @@ void UiInitGameSelectionList(std::string_view search)
 	const SDL_Rect rect4 = { (Sint16)(uiPosition.x + 300), (Sint16)(uiPosition.y + 211), 295, 33 };
 	vecSelGameDialog.push_back(std::make_unique<UiArtText>(_("Select Action").data(), rect4, UiFlags::AlignCenter | UiFlags::FontSize30 | UiFlags::ColorUiSilver, 3));
 
+	// Browsers cannot accept connections, so they can only join a server
+#ifndef __EMSCRIPTEN__
 #ifdef PACKET_ENCRYPTION
 	vecSelGameDlgItems.push_back(std::make_unique<UiListItem>(_("Create Game"), 0, UiFlags::ColorUiGold));
 #endif
 	vecSelGameDlgItems.push_back(std::make_unique<UiListItem>(_("Create Public Game"), 1, UiFlags::ColorUiGold));
+#endif
 	vecSelGameDlgItems.push_back(std::make_unique<UiListItem>(_("Join Game"), 2, UiFlags::ColorUiGold));
 
 	if (provider == SELCONN_ZT) {
@@ -229,7 +241,11 @@ void selgame_GameSelection_Focus(size_t value)
 		if (provider == SELCONN_ZT) {
 			CopyUtf8(selgame_Description, _("Enter Game ID to join a game already in progress."), sizeof(selgame_Description));
 		} else {
+#ifdef __EMSCRIPTEN__
+			CopyUtf8(selgame_Description, _("Enter the server address to join a game already in progress."), sizeof(selgame_Description));
+#else
 			CopyUtf8(selgame_Description, _("Enter an IP or a hostname to join a game already in progress."), sizeof(selgame_Description));
+#endif
 		}
 		break;
 	default:

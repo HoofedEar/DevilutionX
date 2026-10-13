@@ -18,8 +18,6 @@
 
 namespace devilution::net {
 
-constexpr uint16_t TcpErrorCodeFlags = 0x8000;
-
 inline PacketError ServerError()
 {
 	return PacketError("Invalid player ID");

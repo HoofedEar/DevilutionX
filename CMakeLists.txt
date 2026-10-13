@@ -419,6 +419,8 @@ if(EMSCRIPTEN)
     -sALLOW_MEMORY_GROWTH=1
     -sASYNCIFY
     -lidbfs.js
+    # Browsers cannot open TCP connections, so client-server games use dvlnet/websocket_client
+    -lwebsocket.js
     --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Packaging/emscripten/index.html
   )
 

@@ -324,6 +324,9 @@
 		var spinnerElement = document.getElementById('spinner');
 
 		var Module = {
+			// Pre-filled under Multi Player > Join Game for players who have not joined a server yet.
+			// "host" or "host:port" uses wss:// on an https page (ws:// on http), or give a full ws:// or wss:// URL.
+			defaultServer: '',
 			preRun: [],
 			postRun: [],
 			print: (function () {

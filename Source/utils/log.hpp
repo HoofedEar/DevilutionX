@@ -12,6 +12,7 @@
 #include <string>
 
 #include "utils/attributes.h"
+#include "utils/format.hpp"
 #include "utils/str_cat.hpp"
 
 #ifdef USE_SDL1
@@ -53,7 +54,7 @@ std::string format(std::string_view fmt, Args &&...args)
 {
 #if DVL_EXCEPTIONS
 	try {
-		return std::vformat(fmt, std::make_format_args(args...));
+		return VFormat(fmt, args...);
 	} catch (const std::format_error &e) {
 		const std::string fullError = StrCat("Format error, fmt: ", fmt, " error: ", e.what());
 		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%.*s", static_cast<int>(fullError.size()), fullError.c_str());
@@ -61,7 +62,7 @@ std::string format(std::string_view fmt, Args &&...args)
 	}
 #else
 	// `std::vformat` terminates the program on error when exceptions are disabled.
-	return std::vformat(fmt, std::make_format_args(args...));
+	return VFormat(fmt, args...);
 #endif
 }
 

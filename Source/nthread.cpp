@@ -45,6 +45,7 @@ int8_t sgbPacketCountdown;
 bool sgbThreadIsRunning;
 SdlThread Thread;
 
+#ifndef __EMSCRIPTEN__
 void NthreadHandler()
 {
 	if (!nthread_should_run) {
@@ -68,6 +69,7 @@ void NthreadHandler()
 			return;
 	}
 }
+#endif
 
 } // namespace
 
@@ -182,7 +184,9 @@ void nthread_start(bool setTurnUpperBit)
 		sgbThreadIsRunning = false;
 		MemCrit.lock();
 		nthread_should_run = true;
+#ifndef __EMSCRIPTEN__
 		Thread = SdlThread { NthreadHandler };
+#endif
 	}
 }
 
@@ -201,6 +205,7 @@ void nthread_cleanup()
 
 void nthread_ignore_mutex(bool bStart)
 {
+#ifndef __EMSCRIPTEN__
 	if (!Thread.joinable())
 		return;
 
@@ -208,8 +213,22 @@ void nthread_ignore_mutex(bool bStart)
 		MemCrit.unlock();
 	else
 		MemCrit.lock();
+#endif
 	sgbThreadIsRunning = bStart;
 }
+
+#ifdef __EMSCRIPTEN__
+void nthread_pump()
+{
+	if (!nthread_should_run || !sgbThreadIsRunning)
+		return;
+	// Not due yet: NthreadHandler would still be sleeping
+	if (last_tick - static_cast<int>(SDL_GetTicks()) > 0)
+		return;
+	nthread_send_and_recv_turn(0, 0);
+	nthread_recv_turns();
+}
+#endif
 
 bool nthread_has_500ms_passed(bool *drawGame /*= nullptr*/)
 {

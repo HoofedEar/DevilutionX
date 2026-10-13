@@ -30,6 +30,16 @@ void nthread_start(bool setTurnUpperBit);
 void nthread_cleanup();
 void nthread_ignore_mutex(bool bStart);
 
+#ifdef __EMSCRIPTEN__
+/**
+ * @brief Browsers have no threads to run NthreadHandler on (SdlThread would run it to completion,
+ * which in a multiplayer game is never), so the main thread calls this wherever it would otherwise
+ * keep other players waiting, such as while loading a level. Does what one pass of the handler
+ * does, when a turn is due and the main thread has released the network (nthread_ignore_mutex).
+ */
+void nthread_pump();
+#endif
+
 /**
  * @brief Checks if it's time for the logic to advance
  * @return True if the engine should tick

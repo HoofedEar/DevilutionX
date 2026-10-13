@@ -20,6 +20,11 @@ namespace devilution::net {
 
 cookie_t packet_out::GenerateCookie()
 {
+	// Public games never reach the sodium_init() in packet_factory, and under Emscripten
+	// randombytes_buf() does not initialize itself (it needs sodium_init() to set up
+	// Module.getRandomValue). Calling it again is cheap, so do it here for every platform.
+	if (sodium_init() < 0)
+		ABORT();
 	cookie_t cookie;
 	randombytes_buf(reinterpret_cast<unsigned char *>(&cookie),
 	    sizeof(cookie_t));

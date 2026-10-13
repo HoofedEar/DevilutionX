@@ -57,7 +57,7 @@ void SelconnLoad()
 #ifndef DISABLE_ZERO_TIER
 	vecConnItems.push_back(std::make_unique<UiListItem>(std::string_view(ConnectionNames[SELCONN_ZT]), SELCONN_ZT));
 #endif
-#ifndef DISABLE_TCP
+#if !defined(DISABLE_TCP) || defined(__EMSCRIPTEN__)
 	vecConnItems.push_back(std::make_unique<UiListItem>(_(ConnectionNames[SELCONN_TCP]), SELCONN_TCP));
 #endif
 #endif
@@ -123,7 +123,11 @@ void SelconnFocus(size_t value)
 	int players = MAX_PLRS;
 	switch (vecConnItems[value]->m_value) {
 	case SELCONN_TCP:
+#ifdef __EMSCRIPTEN__
+		CopyUtf8(selconn_Description, _("Join a dedicated server over the internet."), sizeof(selconn_Description));
+#else
 		CopyUtf8(selconn_Description, _("All computers must be connected to a TCP-compatible network."), sizeof(selconn_Description));
+#endif
 		players = MAX_PLRS;
 		break;
 	case SELCONN_ZT:

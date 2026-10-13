@@ -14,6 +14,9 @@ namespace net {
 typedef std::vector<unsigned char> buffer_t;
 typedef uint32_t framesize_t;
 
+/** @brief Frame flags marking a one byte PacketError::ErrorCode sent by the server instead of a packet. */
+constexpr uint16_t TcpErrorCodeFlags = 0x8000;
+
 class frame_queue {
 public:
 	constexpr static framesize_t frame_size_mask = 0xFFFF;

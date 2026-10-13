@@ -41,6 +41,8 @@ enum MapColors : uint8_t {
 	MapColorsPlayer2 = (PAL8_YELLOW + 1),
 	MapColorsPlayer3 = (PAL8_RED + 1),
 	MapColorsPlayer4 = (PAL8_BLUE + 1),
+	MapColorsPlayer5 = (PAL16_GRAY + 1),
+	MapColorsPlayer6 = (PAL16_BEIGE + 3),
 	/** color for bright map lines (doors, stairs etc.) */
 	MapColorsBright = PAL8_YELLOW,
 	/** color for dim map lines/dots */
@@ -1327,6 +1329,8 @@ uint8_t GetPlayerMapColor(int id)
 		MapColorsPlayer2,
 		MapColorsPlayer3,
 		MapColorsPlayer4,
+		MapColorsPlayer5,
+		MapColorsPlayer6,
 	};
 
 	if (id < 0 || id >= static_cast<int>(SDL_arraysize(PlayerMapColors)))

@@ -36,6 +36,7 @@
 #include "hwcursor.hpp"
 #include "loadsave.h"
 #include "multi.h"
+#include "nthread.h"
 #include "pfile.h"
 #include "plrmsg.h"
 #include "utils/log.hpp"
@@ -295,6 +296,10 @@ void CheckShouldSkipRendering()
 
 bool HandleProgressBarUpdate()
 {
+#ifdef __EMSCRIPTEN__
+	// Keeps turns flowing to the other players while loading, which the network thread does elsewhere
+	nthread_pump();
+#endif
 	CheckShouldSkipRendering();
 	SDL_Event event;
 	// We use the real `PollEvent` here instead of `FetchMessage`

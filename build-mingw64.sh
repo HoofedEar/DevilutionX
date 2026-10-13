@@ -86,11 +86,13 @@ if [[ "${TARGET}" == web ]]; then
 
     echo "==> Configuring (Emscripten $(emcc.bat --version | head -n1 | sed 's/.*) //'))"
     # The Emscripten platform file (CMake/platforms/emscripten.cmake) already
-    # disables networking, testing and system libraries that don't apply.
+    # disables TCP/ZeroTier, testing and system libraries that don't apply.
+    # Networking stays on: browsers join dedicated servers over WebSockets
+    # (Source/dvlnet/websocket_client.cpp).
     cmake -S. -B"${BUILD_DIR}" -G Ninja \
         -DCMAKE_TOOLCHAIN_FILE="${EMSCRIPTEN_DIR}/cmake/Modules/Platform/Emscripten.cmake" \
         -DCMAKE_BUILD_TYPE=Release \
-        -DNONET=ON
+        -DNONET=OFF
 
     echo "==> Building"
     cmake --build "${BUILD_DIR}" -j "$(nproc)"
