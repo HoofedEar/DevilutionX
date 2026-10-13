@@ -284,4 +284,9 @@ bool DvlNet_JoinedEmptyGame()
 	return dvlnet_inst->joined_empty_game();
 }
 
+bool DvlNet_SendServerCommand(std::string_view command)
+{
+	return dvlnet_inst != nullptr && dvlnet_inst->send_server_command(command);
+}
+
 } // namespace devilution

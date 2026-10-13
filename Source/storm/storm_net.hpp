@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "multi.h"
@@ -23,6 +24,7 @@ enum event_type : uint8_t {
 	EVENT_TYPE_PLAYER_LEAVE_GAME,
 	EVENT_TYPE_PLAYER_MESSAGE,
 	EVENT_TYPE_KICKED_BY_SERVER,
+	EVENT_TYPE_SERVER_SHUTDOWN,
 };
 
 extern const char *ConnectionNames[];
@@ -149,5 +151,7 @@ void DvlNet_ClearPassword();
 bool DvlNet_IsPublicGame();
 DvlNetLatencies DvlNet_GetLatencies(uint8_t playerId);
 bool DvlNet_JoinedEmptyGame();
+/** @brief Sends a chat command the client does not know to a dedicated server, if the server takes them. */
+bool DvlNet_SendServerCommand(std::string_view command);
 
 } // namespace devilution

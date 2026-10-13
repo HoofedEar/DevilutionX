@@ -264,6 +264,9 @@ bool CheckChatCommand(const std::string_view text)
 
 	auto textCmdIterator = c_find_if(TextCmdList, [&](const TextCmdItem &elem) { return text.find(elem.text) == 0 && (text.length() == elem.text.length() || text[elem.text.length()] == ' '); });
 	if (textCmdIterator == TextCmdList.end()) {
+		// A dedicated server may know it, e.g. its admin commands. It replies in the chat area.
+		if (DvlNet_SendServerCommand(text))
+			return true;
 		InitDiabloMsg(StrCat(_("Command "), "\"", text, "\"", _(" is unknown.")));
 		return true;
 	}

@@ -145,4 +145,9 @@ bool cdwrap::joined_empty_game()
 	return dvlnet_wrap->joined_empty_game();
 }
 
+bool cdwrap::send_server_command(std::string_view command)
+{
+	return dvlnet_wrap->send_server_command(command);
+}
+
 } // namespace devilution::net

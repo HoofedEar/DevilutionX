@@ -80,11 +80,12 @@ std::optional<std::string> ServerKickMessage;
  * Contains the set of supported event types supported by the multiplayer
  * event handler.
  */
-const event_type EventTypes[4] = {
+const event_type EventTypes[5] = {
 	EVENT_TYPE_PLAYER_LEAVE_GAME,
 	EVENT_TYPE_PLAYER_CREATE_GAME,
 	EVENT_TYPE_PLAYER_MESSAGE,
-	EVENT_TYPE_KICKED_BY_SERVER
+	EVENT_TYPE_KICKED_BY_SERVER,
+	EVENT_TYPE_SERVER_SHUTDOWN
 };
 
 void SwapGameDataLE(GameData &gameData)
@@ -514,6 +515,10 @@ void HandleEvents(_SNETEVENT *pEvt)
 		// Leave once it is safe to, see multi_handle_delta() and msg_wait_resync()
 		gbGameDestroyed = true;
 	} break;
+	case EVENT_TYPE_SERVER_SHUTDOWN:
+		ServerKickMessage = std::string(_("The server was shut down."));
+		gbGameDestroyed = true;
+		break;
 	}
 }
 

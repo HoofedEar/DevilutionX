@@ -71,6 +71,15 @@ public:
 		return false;
 	}
 
+	/**
+	 * @brief Sends a chat command, such as "/kick Bob", to a dedicated server that takes them.
+	 * @return False if the server does not take commands, or it could not be sent.
+	 */
+	virtual bool send_server_command(std::string_view command)
+	{
+		return false;
+	}
+
 	static std::unique_ptr<abstract_net> MakeNet(provider_t provider);
 };
 

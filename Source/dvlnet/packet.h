@@ -69,6 +69,18 @@ enum class server_message_t : uint8_t {
 	Notice = 0,
 	/** @brief The text is the reason, possibly empty. */
 	Kicked = 1,
+	/** @brief The server is stopping and is about to disconnect everyone. */
+	Shutdown = 2,
+	/** @brief Sent on joining, by a server that takes the chat commands the client does not know itself. */
+	Welcome = 3,
+};
+
+/**
+ * @brief The first byte of a PT_MESSAGE a client sends to a dedicated server (destination PLR_MASTER), followed by UTF-8 text.
+ */
+enum class client_message_t : uint8_t {
+	/** @brief A chat command for the server, such as "/kick Bob". */
+	Command = 0,
 };
 
 class PacketError {

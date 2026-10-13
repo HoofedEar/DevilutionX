@@ -43,6 +43,7 @@ public:
 
 	DvlNetLatencies get_latencies(uint8_t playerid) override;
 	bool joined_empty_game() override;
+	bool send_server_command(std::string_view command) override;
 
 	~base() override = default;
 
@@ -94,6 +95,8 @@ private:
 	std::array<PlayerState, MAX_PLRS> playerStateTable_;
 	bool awaitingSequenceNumber_ = true;
 	bool joinedEmptyGame_ = false;
+	/** @brief Set when a dedicated server says it takes chat commands. */
+	bool serverTakesCommands_ = false;
 	uint32_t lastEchoTime = 0;
 
 	plr_t GetOwner();

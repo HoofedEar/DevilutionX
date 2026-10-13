@@ -45,7 +45,7 @@ extern bool PublicGame;
 extern uint8_t gbDeltaSender;
 extern uint32_t player_state[MAX_PLRS];
 extern bool IsLoopback;
-/** Set when a dedicated server kicked us, to be shown once we are back in the menus. */
+/** Set when a dedicated server kicked us or shut down, to be shown once we are back in the menus. */
 extern std::optional<std::string> ServerKickMessage;
 
 void SwapGameDataLE(GameData &gameData);

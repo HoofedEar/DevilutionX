@@ -55,6 +55,7 @@ public:
 	void clear_password() override;
 	DvlNetLatencies get_latencies(uint8_t playerid) override;
 	bool joined_empty_game() override;
+	bool send_server_command(std::string_view command) override;
 
 	virtual ~cdwrap() = default;
 };

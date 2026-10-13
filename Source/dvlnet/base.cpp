@@ -53,6 +53,28 @@ bool base::joined_empty_game()
 	return joinedEmptyGame_;
 }
 
+bool base::send_server_command(std::string_view command)
+{
+	if (!serverTakesCommands_)
+		return false;
+	buffer_t message;
+	message.reserve(command.size() + 1);
+	message.push_back(static_cast<uint8_t>(client_message_t::Command));
+	message.insert(message.end(), command.begin(), command.end());
+	std::expected<std::unique_ptr<packet>, PacketError> pkt
+	    = pktfty->make_packet<PT_MESSAGE>(plr_self, PLR_MASTER, message);
+	if (!pkt.has_value()) {
+		LogError("make_packet: {}", pkt.error().what());
+		return false;
+	}
+	std::expected<void, PacketError> result = send(**pkt);
+	if (!result.has_value()) {
+		LogError("send: {}", result.error().what());
+		return false;
+	}
+	return true;
+}
+
 void base::RunEventHandler(_SNETEVENT &ev)
 {
 	auto f = registered_handlers[static_cast<event_type>(ev.eventid)];
@@ -178,6 +200,12 @@ std::expected<void, PacketError> base::HandleServerMessage(packet &pkt)
 		case server_message_t::Kicked:
 			ev.eventid = EVENT_TYPE_KICKED_BY_SERVER;
 			break;
+		case server_message_t::Shutdown:
+			ev.eventid = EVENT_TYPE_SERVER_SHUTDOWN;
+			break;
+		case server_message_t::Welcome:
+			serverTakesCommands_ = true;
+			return {};
 		default:
 			// From a newer server
 			return {};
