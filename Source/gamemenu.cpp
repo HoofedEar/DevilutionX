@@ -57,6 +57,16 @@ TMenuItem sgSingleMenu[] = {
 	{ GMENU_ENABLED, nullptr,                 nullptr             },
 	// clang-format on
 };
+/** Contains the game menu items of the arena menu, which has no saving or loading. */
+TMenuItem sgArenaMenu[] = {
+	// clang-format off
+	// dwFlags,      pszStr,                  fnMenu
+	{ GMENU_ENABLED, N_("Options"),           &GamemenuOptions    },
+	{ GMENU_ENABLED, N_("Exit to Main Menu"), &GamemenuNewGame    },
+	{ GMENU_ENABLED, N_("Quit Game"),         &gamemenu_quit_game },
+	{ GMENU_ENABLED, nullptr,                 nullptr             },
+	// clang-format on
+};
 /** Contains the game menu items of the multi player menu. */
 TMenuItem sgMultiMenu[] = {
 	// clang-format off
@@ -96,6 +106,11 @@ void GamemenuUpdateSingle()
 	const bool enable = MyPlayer->_pmode != PM_DEATH && !MyPlayerIsDead;
 
 	sgSingleMenu[0].setEnabled(enable);
+}
+
+void GamemenuUpdateArena()
+{
+	sgArenaMenu[0].setEnabled(MyPlayer->_pmode != PM_DEATH && !MyPlayerIsDead);
 }
 
 void GamemenuPrevious(bool /*bActivate*/)
@@ -296,6 +311,9 @@ void gamemenu_quit_game(bool bActivate)
 
 void gamemenu_load_game(bool /*bActivate*/)
 {
+	if (gbIsArenaMode)
+		return;
+
 	EventHandler saveProc = SetEventHandler(DisableInputEventHandler);
 	gamemenu_off();
 	ClearFloatingNumbers();
@@ -334,6 +352,9 @@ void gamemenu_load_game(bool /*bActivate*/)
 
 void gamemenu_save_game(bool /*bActivate*/)
 {
+	if (gbIsArenaMode)
+		return;
+
 	if (pcurs != CURSOR_HAND) {
 		return;
 	}
@@ -366,7 +387,9 @@ void gamemenu_save_game(bool /*bActivate*/)
 void gamemenu_on()
 {
 	isGameMenuOpen = true;
-	if (!gbIsMultiplayer) {
+	if (gbIsArenaMode) {
+		gmenu_set_items(sgArenaMenu, GamemenuUpdateArena);
+	} else if (!gbIsMultiplayer) {
 		gmenu_set_items(sgSingleMenu, GamemenuUpdateSingle);
 	} else {
 		gmenu_set_items(sgMultiMenu, nullptr);

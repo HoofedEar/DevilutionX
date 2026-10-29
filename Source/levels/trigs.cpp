@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 
+#include "arena_mode.hpp"
 #include "control/control.hpp"
 #include "controls/control_mode.hpp"
 #include "controls/plrctrls.h"
@@ -781,7 +782,7 @@ bool ForceArenaTrig()
 	}
 	for (size_t i = 0; i < len; ++i) {
 		if (dPiece[cursPosition.x][cursPosition.y] == checkList[i]) {
-			InfoString = _("Up to town");
+			InfoString = gbIsArenaMode ? _("Next arena") : _("Up to town");
 			cursPosition = trigs[0].position;
 			return true;
 		}
@@ -839,7 +840,7 @@ void CheckTrigForce()
 			trigflag = ForcePWaterTrig();
 			break;
 		default:
-			if (IsArenaLevel(setlvlnum))
+			if (IsArenaLevel(setlvlnum) && (!gbIsArenaMode || IsArenaExitOpen()))
 				trigflag = ForceArenaTrig();
 			break;
 		}

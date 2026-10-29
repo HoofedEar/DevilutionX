@@ -16,6 +16,7 @@ const auto OptionChangeHandlerShareware = (GetOptions().GameMode.shareware.SetVa
 GameData sgGameInitInfo;
 bool gbRunGame;
 bool gbIsMultiplayer;
+bool gbIsArenaMode;
 bool gbIsSpawn;
 bool gbIsHellfire;
 bool gbVanilla;

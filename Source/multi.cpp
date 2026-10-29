@@ -22,6 +22,7 @@
 #include <config.h>
 
 #include "DiabloUI/diabloui.h"
+#include "arena_mode.hpp"
 #include "diablo.h"
 #include "engine/demomode.h"
 #include "engine/point.hpp"
@@ -536,7 +537,12 @@ bool InitSingle(GameData *gameData)
 	InspectPlayer = MyPlayer;
 	gbIsMultiplayer = false;
 
-	pfile_read_player_from_save(gSaveNumber, *MyPlayer);
+	if (gbIsArenaMode) {
+		CreateArenaPlayer(*MyPlayer);
+		gbValidSaveFile = false;
+	} else {
+		pfile_read_player_from_save(gSaveNumber, *MyPlayer);
+	}
 
 	return true;
 }

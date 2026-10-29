@@ -20,6 +20,7 @@
 #include <ankerl/unordered_dense.h>
 
 #include "DiabloUI/ui_flags.hpp"
+#include "arena_mode.hpp"
 #include "automap.h"
 #include "controls/control_mode.hpp"
 #include "controls/plrctrls.h"
@@ -1440,6 +1441,8 @@ void DrawView(const Surface &out, Point startPosition)
 	} else if (PauseMode != 0) {
 		gmenu_draw_pause(out);
 	}
+	if (gbIsArenaMode)
+		DrawArenaHud(out);
 	if (IsDiabloMsgAvailable()) {
 		DrawDiabloMsg(out.subregionY(0, out.h() - GetMainPanel().size.height));
 	}

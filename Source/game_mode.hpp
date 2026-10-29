@@ -39,6 +39,8 @@ extern DVL_API_FOR_TEST GameData sgGameInitInfo;
 extern DVL_API_FOR_TEST bool gbRunGame;
 /** Indicate if we are in a multiplayer game */
 extern DVL_API_FOR_TEST bool gbIsMultiplayer;
+/** Indicate if we are in a single player Arena run (fresh hero, waves of monsters, no saving) */
+extern DVL_API_FOR_TEST bool gbIsArenaMode;
 /** Indicate if we only have access to demo data */
 extern DVL_API_FOR_TEST bool gbIsSpawn;
 /** Indicate if we have loaded the Hellfire expansion data */

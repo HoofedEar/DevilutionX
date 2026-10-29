@@ -16,6 +16,7 @@
 #include "DiabloUI/diabloui.h"
 #include "DiabloUI/selok.h"
 #include "DiabloUI/settingsmenu.h"
+#include "arena_mode.hpp"
 #include "engine/assets.hpp"
 #include "engine/demomode.h"
 #include "game_mode.hpp"
@@ -91,6 +92,15 @@ bool InitMultiPlayerMenu()
 	return InitMenu(SELHERO_CONNECT);
 }
 
+bool InitArenaMenu()
+{
+	gbIsMultiplayer = false;
+	gbIsArenaMode = true;
+	const bool result = InitMenu(SELHERO_NEW_DUNGEON);
+	gbIsArenaMode = false;
+	return result;
+}
+
 void PlayIntro()
 {
 	music_stop();
@@ -115,6 +125,19 @@ bool mainmenu_select_hero_dialog(GameData *gameData)
 	if (demo::IsRunning()) {
 		pfile_ui_set_hero_infos(DummyGetHeroInfo);
 		gbLoadGame = true;
+	} else if (gbIsArenaMode) {
+		// Arena heroes only live for a single run, so they are never written to (or picked from) a save slot.
+		uint32_t unusedSaveNumber = 0;
+		UiSelHeroSingDialog(
+		    ArenaUiSetHeroInfos,
+		    ArenaUiCreateHero,
+		    [](_uiheroinfo * /*heroInfo*/) { return true; },
+		    pfile_ui_set_class_stats,
+		    &dlgresult,
+		    &unusedSaveNumber,
+		    &gameData->nDifficulty);
+		gameData->nDifficulty = DIFF_NORMAL;
+		gbLoadGame = false;
 	} else if (!gbIsMultiplayer) {
 		pSaveNumberFromOptions = gbIsHellfire ? &GetOptions().Hellfire.lastSinglePlayerHero : &GetOptions().Diablo.lastSinglePlayerHero;
 		gSaveNumber = **pSaveNumberFromOptions;
@@ -179,6 +202,10 @@ void mainmenu_loop()
 			break;
 		case MAINMENU_MULTIPLAYER:
 			if (!InitMultiPlayerMenu())
+				done = true;
+			break;
+		case MAINMENU_ARENA:
+			if (!InitArenaMenu())
 				done = true;
 			break;
 		case MAINMENU_ATTRACT_MODE:

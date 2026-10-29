@@ -23,6 +23,7 @@
 
 #include "DiabloUI/selstart.h"
 #include "appfat.h"
+#include "arena_mode.hpp"
 #include "automap.h"
 #include "capture.h"
 #include "control/control.hpp"
@@ -1530,6 +1531,8 @@ void GameLogic()
 		ProcessPlayers();
 	}
 	if (leveltype != DTYPE_TOWN) {
+		if (gbIsArenaMode)
+			ProcessArena();
 		gGameLogicStep = GameLogicStep::ProcessMonsters;
 #ifdef _DEBUG
 		if (!DebugInvisible)
@@ -3269,6 +3272,8 @@ std::expected<void, std::string> LoadGameLevelSetLevel(bool firstflag, lvl_entry
 	RETURN_IF_ERROR(LoadSetMap());
 	IncProgress();
 	RETURN_IF_ERROR(GetLevelMTypes());
+	if (gbIsArenaMode)
+		RETURN_IF_ERROR(AddArenaMonsterTypes());
 	IncProgress();
 	InitGolems();
 	RETURN_IF_ERROR(InitMonsters());
@@ -3298,7 +3303,8 @@ std::expected<void, std::string> LoadGameLevelSetLevel(bool firstflag, lvl_entry
 	InitMultiView();
 	IncProgress();
 
-	if (firstflag || lvldir == ENTRY_LOAD || !myPlayer._pSLvlVisited[setlvlnum] || gbIsMultiplayer) {
+	// Arena runs never save levels, so every arena is generated fresh.
+	if (firstflag || lvldir == ENTRY_LOAD || !myPlayer._pSLvlVisited[setlvlnum] || gbIsMultiplayer || gbIsArenaMode) {
 		InitItems();
 		SavePreLighting();
 	} else {

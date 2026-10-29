@@ -318,8 +318,11 @@ Point GetMapReturnPosition()
 		return Quests[Q_PWATER].position + Direction::SouthWest;
 	case SL_VILEBETRAYER:
 		return Quests[Q_BETRAYER].position + Direction::South;
-	default:
-		return GetTowner(TOWN_DRUNK)->position + Direction::SouthEast;
+	default: {
+		// An arena run never visits town, so there may be no towners to return to.
+		const Towner *drunk = GetTowner(TOWN_DRUNK);
+		return drunk != nullptr ? drunk->position + Direction::SouthEast : ViewPosition;
+	}
 	}
 }
 

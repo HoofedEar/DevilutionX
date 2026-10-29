@@ -608,6 +608,10 @@ void SaveWriter::RemoveHashEntries(bool (*fnGetName)(uint8_t, char *))
 
 std::optional<SaveReader> OpenSaveArchive(uint32_t saveNum)
 {
+	// Arena heroes only exist in memory, don't pick up data of the hero in the last used save slot.
+	if (gbIsArenaMode)
+		return std::nullopt;
+
 	return CreateSaveReader(GetSavePath(saveNum));
 }
 
@@ -644,6 +648,9 @@ const char *pfile_get_password()
 
 void pfile_write_hero(bool writeGameData)
 {
+	if (gbIsArenaMode)
+		return;
+
 	SaveWriter saveWriter = GetSaveWriter(gSaveNumber, /*carryForward=*/writeGameData);
 	pfile_write_hero(saveWriter, writeGameData);
 
@@ -682,7 +689,7 @@ HeroCompareResult pfile_compare_hero_demo(int demo, bool logDetails)
 
 void sfile_write_stash()
 {
-	if (!Stash.dirty)
+	if (!Stash.dirty || gbIsArenaMode)
 		return;
 
 	SaveWriter stashWriter = GetStashWriter();
@@ -805,6 +812,9 @@ void pfile_read_player_from_save(uint32_t saveNum, Player &player)
 
 void pfile_save_level()
 {
+	if (gbIsArenaMode)
+		return;
+
 	SaveWriter saveWriter = GetSaveWriter(gSaveNumber);
 	SaveLevel(saveWriter);
 }
@@ -817,7 +827,7 @@ std::expected<void, std::string> pfile_convert_levels()
 
 void pfile_remove_temp_files()
 {
-	if (gbIsMultiplayer)
+	if (gbIsMultiplayer || gbIsArenaMode)
 		return;
 
 	SaveWriter saveWriter = GetSaveWriter(gSaveNumber, /*carryForward=*/true);

@@ -8,6 +8,7 @@
 #endif
 #include "engine/load_file.hpp"
 #include "engine/palette.h"
+#include "game_mode.hpp"
 #include "levels/drlg_l1.h"
 #include "levels/drlg_l2.h"
 #include "levels/drlg_l3.h"
@@ -104,6 +105,9 @@ std::expected<void, std::string> LoadArenaMap(const char *path, Point viewPositi
 	numtrigs = 1;
 	trigs[0].position = exitTrigger;
 	trigs[0]._tmsg = WM_DIABRTNLVL;
+	// In an arena run the trigger is disabled, the run itself opens the exit once all waves are cleared.
+	if (gbIsArenaMode)
+		numtrigs = 0;
 	return {};
 }
 

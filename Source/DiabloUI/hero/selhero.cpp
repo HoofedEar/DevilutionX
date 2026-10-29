@@ -78,6 +78,15 @@ void SelheroClassSelectorSelect(size_t value);
 void SelheroClassSelectorEsc();
 const char *SelheroGenerateName(HeroClass heroClass);
 
+const char *GetNewHeroTitle()
+{
+	if (selhero_isMultiPlayer)
+		return _("New Multi Player Hero").data();
+	if (gbIsArenaMode)
+		return _("New Arena Hero").data();
+	return _("New Single Player Hero").data();
+}
+
 void SelheroUiFocusNavigationYesNo()
 {
 	if (selhero_isSavegame)
@@ -209,7 +218,7 @@ void SelheroListSelect(size_t value)
 		memset(&selhero_heroInfo.name, 0, sizeof(selhero_heroInfo.name));
 		selhero_heroInfo.saveNumber = pfile_ui_get_first_unused_save_num();
 		SelheroSetStats();
-		title = selhero_isMultiPlayer ? _("New Multi Player Hero").data() : _("New Single Player Hero").data();
+		title = GetNewHeroTitle();
 		selhero_isSavegame = false;
 		return;
 	}
@@ -299,7 +308,7 @@ void SelheroClassSelectorSelect(size_t value)
 
 	const Point uiPosition = GetUIRectangle().position;
 
-	title = selhero_isMultiPlayer ? _("New Multi Player Hero").data() : _("New Single Player Hero").data();
+	title = GetNewHeroTitle();
 	memset(selhero_heroInfo.name, '\0', sizeof(selhero_heroInfo.name));
 	if (ShouldPrefillHeroName())
 		strcpy(selhero_heroInfo.name, SelheroGenerateName(selhero_heroInfo.heroclass));
@@ -369,7 +378,8 @@ void SelheroLoadSelect(size_t value)
 		return;
 	}
 
-	if (!selhero_isMultiPlayer) {
+	// Arena runs always start on normal difficulty, their waves provide the challenge.
+	if (!selhero_isMultiPlayer && !gbIsArenaMode) {
 		// This is part of a dangerous hack to enable difficulty selection in single-player.
 		// FIXME: Dialogs should not refer to each other's variables.
 

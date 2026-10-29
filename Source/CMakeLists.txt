@@ -4,6 +4,7 @@ include(functions/genex)
 
 set(libdevilutionx_SRCS
   appfat.cpp
+  arena_mode.cpp
   automap.cpp
   capture.cpp
   cursor.cpp

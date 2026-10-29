@@ -2065,6 +2065,12 @@ void AddWeaponExplosion(Missile &missile, AddMissileParameter &parameter)
 
 void AddTownPortal(Missile &missile, AddMissileParameter &parameter)
 {
+	if (gbIsArenaMode) {
+		// There is no town to return to in an arena run.
+		missile._miDelFlag = true;
+		return;
+	}
+
 	if (leveltype == DTYPE_TOWN) {
 		missile.position.tile = parameter.dst;
 		missile.position.start = parameter.dst;

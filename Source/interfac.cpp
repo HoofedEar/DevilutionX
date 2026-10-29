@@ -21,6 +21,7 @@
 #include <SDL.h>
 #endif
 
+#include "arena_mode.hpp"
 #include "control/control.hpp"
 #include "controls/input.h"
 #include "engine/clx_sprite.hpp"
@@ -330,6 +331,8 @@ void DoLoad(interface_mode uMsg)
 		IncProgress();
 		pfile_remove_temp_files();
 		IncProgress();
+		if (gbIsArenaMode)
+			InitArenaRun();
 		loadResult = LoadGameLevel(true, ENTRY_MAIN);
 		if (loadResult.has_value()) IncProgress();
 		break;
